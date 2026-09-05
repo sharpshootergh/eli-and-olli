@@ -7,7 +7,7 @@ import { Category, Goal, GoalType } from '@/lib/types';
 import { Plus, Trash2, Edit2, Upload, X } from 'lucide-react';
 
 export default function AdminGoalsPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [goals, setGoals] = useState<Goal[]>([]);
 
   // Form states
@@ -24,27 +24,23 @@ export default function AdminGoalsPage() {
 
   async function loadData() {
     try {
-      const supabase = createClient();
-      const { data: catData } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
-      const { data: goalData } = await supabase.from('goals').select('*').order('sort_order', { ascending: true });
-
-      if (catData && catData.length > 0) setCategories(catData);
-      else setCategories(MOCK_CATEGORIES);
-
-      if (goalData && goalData.length > 0) setGoals(goalData);
-      else setGoals(MOCK_GOALS);
+      const res = await fetch('/api/goals');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.goals) && data.goals.length > 0) {
+        setGoals(data.goals);
+      } else {
+        const supabase = createClient();
+        const { data: dbGoals } = await supabase.from('goals').select('*').order('sort_order', { ascending: true });
+        if (dbGoals && dbGoals.length > 0) setGoals(dbGoals);
+        else setGoals(MOCK_GOALS);
+      }
     } catch {
-      setCategories(MOCK_CATEGORIES);
       setGoals(MOCK_GOALS);
     }
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadData();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    void loadData();
   }, []);
 
   const openCreateModal = () => {
@@ -52,9 +48,9 @@ export default function AdminGoalsPage() {
     setTitle('');
     setDescription('');
     setImageUrl('');
-    setCategoryId(categories[0]?.id || '');
+    setCategoryId(categories[0]?.id || 'cat-1');
     setType('capped');
-    setTargetAmount('2000');
+    setTargetAmount('5000');
     setShowModal(true);
   };
 
@@ -84,7 +80,6 @@ export default function AdminGoalsPage() {
         const { data: publicUrlData } = supabase.storage.from('goal-images').getPublicUrl(filename);
         setImageUrl(publicUrlData.publicUrl);
       } else {
-        // Fallback object URL preview for dev testing
         const blobUrl = URL.createObjectURL(file);
         setImageUrl(blobUrl);
       }
@@ -98,59 +93,39 @@ export default function AdminGoalsPage() {
 
   const handleSaveGoal = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !categoryId) return;
+    if (!title.trim()) return;
 
     const parsedTarget = type === 'capped' ? parseFloat(targetAmount) || 0 : null;
 
-    const payload = {
-      category_id: categoryId,
+    const goalRecord: Goal = {
+      id: editingGoal ? editingGoal.id : `goal-${Date.now()}`,
+      category_id: categoryId || 'cat-1',
       title: title.trim(),
       description: description.trim() || null,
       image_url: imageUrl.trim() || null,
       type,
       target_amount: parsedTarget,
+      sort_order: editingGoal ? editingGoal.sort_order : goals.length + 1,
+      amount_raised: editingGoal ? editingGoal.amount_raised : 0,
+      contributor_count: editingGoal ? editingGoal.contributor_count : 0,
     };
 
+    // 1. Update UI state instantly
+    if (editingGoal) {
+      setGoals(goals.map((g) => (g.id === editingGoal.id ? goalRecord : g)));
+    } else {
+      setGoals([goalRecord, ...goals]);
+    }
+
+    // 2. Persist to API route & DB
     try {
-      const supabase = createClient();
-
-      if (editingGoal) {
-        // Update existing goal
-        await supabase.from('goals').update(payload).eq('id', editingGoal.id);
-        const updated = goals.map((g) => (g.id === editingGoal.id ? { ...g, ...payload } : g));
-        setGoals(updated);
-      } else {
-        // Insert new goal
-        const newSortOrder = goals.length > 0 ? Math.max(...goals.map((g) => g.sort_order)) + 1 : 1;
-        const newGoalPayload = {
-          ...payload,
-          sort_order: newSortOrder,
-          amount_raised: 0,
-          contributor_count: 0,
-        };
-
-        const { data } = await supabase.from('goals').insert(newGoalPayload).select().single();
-        if (data) {
-          setGoals([...goals, data]);
-        } else {
-          setGoals([...goals, { ...newGoalPayload, id: `goal-${Date.now()}` }]);
-        }
-      }
+      await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal: goalRecord }),
+      });
     } catch {
-      if (editingGoal) {
-        setGoals(goals.map((g) => (g.id === editingGoal.id ? { ...g, ...payload } : g)));
-      } else {
-        setGoals([
-          ...goals,
-          {
-            ...payload,
-            id: `goal-${Date.now()}`,
-            sort_order: goals.length + 1,
-            amount_raised: 0,
-            contributor_count: 0,
-          },
-        ]);
-      }
+      // Handled via local state
     }
 
     setShowModal(false);
@@ -161,8 +136,7 @@ export default function AdminGoalsPage() {
     setGoals(goals.filter((g) => g.id !== id));
 
     try {
-      const supabase = createClient();
-      await supabase.from('goals').delete().eq('id', id);
+      await fetch(`/api/goals?id=${id}`, { method: 'DELETE' });
     } catch {
       // Handled locally
     }
@@ -174,12 +148,12 @@ export default function AdminGoalsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-serif text-2xl text-[#1a2a32]">Registry Goals ({goals.length})</h2>
-          <p className="text-xs text-[#5a6a72]">Manage capped and open registry items, images, and categories.</p>
+          <p className="text-xs text-[#5a6a72]">Create and manage registry items, target amounts, photos, and links.</p>
         </div>
 
         <button
           onClick={openCreateModal}
-          className="px-6 py-3 bg-[#06B3F8] hover:bg-[#5C211B] text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 shadow-md"
+          className="px-6 py-3 bg-[#06B3F8] hover:bg-[#0596D3] text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 shadow-md"
         >
           <Plus className="w-4 h-4" />
           <span>Create Goal</span>
@@ -189,14 +163,14 @@ export default function AdminGoalsPage() {
       {/* Goals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {goals.map((goal) => {
-          const categoryName = categories.find((c) => c.id === goal.category_id)?.name || 'Uncategorized';
+          const categoryName = categories.find((c) => c.id === goal.category_id)?.name || 'Registry';
           const isCapped = goal.type === 'capped';
 
           return (
-            <div key={goal.id} className="glass-card rounded-3xl p-6 border border-[#E3D3BC]/30 space-y-4 flex flex-col justify-between">
+            <div key={goal.id} className="glass-card rounded-3xl p-6 border border-[#E3D3BC]/30 space-y-4 flex flex-col justify-between bg-white shadow-sm">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 bg-[#E3D3BC] text-[#06B3F8] rounded-full">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 bg-[#E3D3BC]/50 text-[#06B3F8] rounded-full">
                     {categoryName}
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${isCapped ? 'bg-[#06B3F8] text-white' : 'bg-[#E3D3BC] text-[#1a2a32]'}`}>
@@ -204,14 +178,21 @@ export default function AdminGoalsPage() {
                   </span>
                 </div>
 
+                {goal.image_url && (
+                  <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={goal.image_url} alt={goal.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+
                 <h3 className="font-serif text-xl text-[#1a2a32] font-medium">{goal.title}</h3>
                 <p className="text-xs text-[#5a6a72] line-clamp-2">{goal.description}</p>
 
                 <div className="text-xs space-y-1 pt-2 border-t border-[#E3D3BC]/20">
                   {isCapped && (
                     <div className="flex justify-between font-medium">
-                      <span>Target:</span>
-                      <span>GHS {goal.target_amount?.toLocaleString('en-GH')}</span>
+                      <span>Target Amount:</span>
+                      <span className="font-bold">GHS {goal.target_amount?.toLocaleString('en-GH')}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-[#06B3F8]">
@@ -224,7 +205,7 @@ export default function AdminGoalsPage() {
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E3D3BC]/20">
                 <button
                   onClick={() => openEditModal(goal)}
-                  className="px-3 py-1.5 text-xs text-[#06B3F8] hover:bg-[#E3D3BC] rounded-lg transition-colors font-medium flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs text-[#06B3F8] hover:bg-[#E3D3BC]/40 rounded-lg transition-colors font-medium flex items-center gap-1"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   Edit
@@ -269,23 +250,6 @@ export default function AdminGoalsPage() {
                   className="w-full px-4 py-2.5 rounded-xl border border-[#E3D3BC] bg-white text-sm"
                   required
                 />
-              </div>
-
-              {/* Category Picker */}
-              <div className="space-y-1">
-                <label className="font-semibold uppercase tracking-wider text-[#06B3F8]">Category *</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E3D3BC] bg-white text-sm"
-                  required
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Description */}
@@ -348,13 +312,13 @@ export default function AdminGoalsPage() {
 
               {/* Image URL / File Upload */}
               <div className="space-y-1">
-                <label className="font-semibold uppercase tracking-wider text-[#06B3F8]">Goal Image</label>
+                <label className="font-semibold uppercase tracking-wider text-[#06B3F8]">Goal Photo URL</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="Paste image URL..."
+                    placeholder="https://images.unsplash.com/... or paste image URL"
                     className="flex-1 px-4 py-2.5 rounded-xl border border-[#E3D3BC] bg-white text-sm"
                   />
                   <label className="cursor-pointer px-4 py-2.5 bg-[#E3D3BC] hover:bg-[#E3D3BC] text-[#06B3F8] font-semibold rounded-xl flex items-center gap-1">
@@ -363,12 +327,12 @@ export default function AdminGoalsPage() {
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   </label>
                 </div>
-                {uploadingImage && <p className="text-[11px] text-[#06B3F8]">Uploading image to storage...</p>}
+                {uploadingImage && <p className="text-[11px] text-[#06B3F8]">Uploading image...</p>}
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-[#06B3F8] hover:bg-[#5C211B] text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all shadow-md mt-4"
+                className="w-full py-3.5 bg-[#06B3F8] hover:bg-[#0596D3] text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all shadow-md mt-4"
               >
                 Save Goal
               </button>

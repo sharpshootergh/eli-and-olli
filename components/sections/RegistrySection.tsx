@@ -16,14 +16,20 @@ export default function RegistrySection() {
   useEffect(() => {
     async function loadGoals() {
       try {
+        const res = await fetch('/api/goals');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.goals)) {
+          setGoals(data.goals as Goal[]);
+          return;
+        }
         const supabase = createClient();
-        const { data, error } = await supabase
+        const { data: dbData, error } = await supabase
           .from('goals')
           .select('*')
           .order('sort_order', { ascending: true });
-        if (!error) setGoals((data ?? []) as Goal[]);
+        if (!error) setGoals((dbData ?? []) as Goal[]);
       } catch {
-        // The payment details remain available if the registry database is not connected.
+        // Fallback
       }
     }
     void loadGoals();
