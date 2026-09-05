@@ -20,12 +20,18 @@ export default function AdminRsvpsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('rsvps')
-          .select('*')
-          .order('created_at', { ascending: false });
-        setRsvps(data ?? []);
+        const res = await fetch('/api/rsvp');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.rsvps)) {
+          setRsvps(data.rsvps);
+        } else {
+          const supabase = createClient();
+          const { data: dbData } = await supabase
+            .from('rsvps')
+            .select('*')
+            .order('created_at', { ascending: false });
+          setRsvps(dbData ?? []);
+        }
       } catch {
         setRsvps([]);
       } finally {

@@ -90,12 +90,13 @@ export async function sendRsvpConfirmationEmail({
   const locationLine = rsvpLocationLine(attendance);
 
   if (!resend) {
-    console.log(`[Resend Mock] RSVP confirmation → ${toEmail}: ${locationLine}`);
-    return { success: true, mocked: true };
+    console.log(`[Resend Unconfigured] RSVP confirmation for ${guestName} (${toEmail}): ${locationLine}`);
+    return { success: true, mocked: true, reason: 'RESEND_API_KEY not set in environment variables' };
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    // 1. Send confirmation email to guest
+    const guestResult = await resend.emails.send({
       from: fromAddress(),
       to: [toEmail],
       subject: `RSVP received — ${siteConfig.shortNames}`,
@@ -112,11 +113,30 @@ export async function sendRsvpConfirmationEmail({
       `,
     });
 
-    if (error) {
-      console.error('[Resend RSVP Error]', error);
-      return { success: false, error };
+    // 2. Also send RSVP Alert notification to host/admin email (Elisha)
+    if (siteConfig.primaryAdminEmail && siteConfig.primaryAdminEmail !== toEmail) {
+      await resend.emails.send({
+        from: fromAddress(),
+        to: [siteConfig.primaryAdminEmail],
+        subject: `🎉 New RSVP Received: ${guestName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; color: #1a2a32; border: 1px solid #E3D3BC;">
+            <h2 style="color: #06B3F8; margin-top: 0;">New RSVP Alert!</h2>
+            <p><strong>Guest Name:</strong> ${guestName}</p>
+            <p><strong>Email:</strong> ${toEmail}</p>
+            <p><strong>Attendance:</strong> ${attendance}</p>
+            <p>View all responses in your <a href="${siteConfig.siteUrl}/admin/rsvps">Admin Panel</a>.</p>
+          </div>
+        `,
+      }).catch((e) => console.warn('[Admin RSVP Alert Error]', e));
     }
-    return { success: true, data };
+
+    if (guestResult.error) {
+      console.error('[Resend RSVP Guest Error]', guestResult.error);
+      return { success: false, error: guestResult.error };
+    }
+
+    return { success: true, data: guestResult.data };
   } catch (err) {
     console.error('[Resend RSVP Exception]', err);
     return { success: false, error: err };
