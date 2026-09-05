@@ -18,6 +18,17 @@ export interface WeddingEvent {
   attendanceKey: 'traditional' | 'white';
 }
 
+function getValidSiteUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!envUrl) {
+    return 'https://seguamour.com';
+  }
+  if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
+    return envUrl;
+  }
+  return `https://${envUrl}`;
+}
+
 export const siteConfig = {
   couple: {
     partnerOne: {
@@ -60,7 +71,7 @@ export const siteConfig = {
       attendanceKey: 'white' as const,
     },
   ] satisfies WeddingEvent[],
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://seguamour.com',
+  siteUrl: getValidSiteUrl(),
   story: {
     videoType: (process.env.NEXT_PUBLIC_STORY_VIDEO_TYPE ?? 'youtube') as 'youtube' | 'mp4',
     youtubeUrl:

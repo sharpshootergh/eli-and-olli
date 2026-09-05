@@ -18,8 +18,21 @@ const sourceSans = Source_Sans_3({
   display: 'swap',
 });
 
+function getMetadataBase(): URL {
+  try {
+    const rawUrl = siteConfig.siteUrl?.trim();
+    if (!rawUrl) return new URL('https://seguamour.com');
+    const formatted = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+      ? rawUrl
+      : `https://${rawUrl}`;
+    return new URL(formatted);
+  } catch {
+    return new URL('https://seguamour.com');
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.siteUrl),
+  metadataBase: getMetadataBase(),
   title: `${siteConfig.shortNames} — Our Wedding`,
   description: `Join Elisha & Olivia for their traditional wedding in Abidjan and white wedding in Cape Coast.`,
   openGraph: {
