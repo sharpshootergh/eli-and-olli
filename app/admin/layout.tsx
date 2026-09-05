@@ -17,10 +17,12 @@ import {
   CalendarHeart,
   Printer,
   Clapperboard,
+  MapPin,
 } from 'lucide-react';
 
 const ADMIN_TABS = [
   { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+  { label: 'Venues & GPS', path: '/admin/events', icon: MapPin },
   { label: 'Categories', path: '/admin/categories', icon: FolderTree },
   { label: 'Goals', path: '/admin/goals', icon: Target },
   { label: 'Contributions', path: '/admin/contributions', icon: Receipt },

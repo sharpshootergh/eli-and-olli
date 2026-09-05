@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
-import { siteConfig, formatGhs } from '@/lib/site-config';
+import { siteConfig, formatGhs, formatEventDate, formatEventTime, type WeddingEvent } from '@/lib/site-config';
 import type { Attendance } from '@/lib/types';
+import fs from 'fs';
+import path from 'path';
 
 function getResend() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -64,17 +66,60 @@ export async function sendThankYouEmail({
   }
 }
 
-function rsvpLocationLine(attendance: Attendance): string {
-  switch (attendance) {
-    case 'traditional':
-      return "We can't wait to see you in Abidjan!";
-    case 'white':
-      return "We can't wait to see you in Cape Coast!";
-    case 'both':
-      return "We can't wait to see you at both celebrations!";
-    case 'none':
-      return "We'll miss you — thank you for letting us know.";
+function getActiveEvents(): WeddingEvent[] {
+  try {
+    const filePath = path.join('/tmp', 'wedding_events_store.json');
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // fallback
   }
+  return siteConfig.events;
+}
+
+function buildEventDetailsHtml(attendance: Attendance): string {
+  if (attendance === 'none') {
+    return `<p style="font-size: 16px; color: #5a6a72; line-height: 1.6;">We will miss you — thank you for letting us know!</p>`;
+  }
+
+  const events = getActiveEvents();
+  const selectedEvents = events.filter((e) => {
+    if (attendance === 'both') return true;
+    if (attendance === 'traditional') return e.attendanceKey === 'traditional' || e.id.includes('traditional');
+    if (attendance === 'white') return e.attendanceKey === 'white' || e.id.includes('white');
+    return false;
+  });
+
+  return selectedEvents
+    .map((e) => {
+      const formattedDate = formatEventDate(e.eventDate, 'en');
+      const formattedTime = formatEventTime(e.eventTime, 'en');
+      const gpsButton = e.gpsUrl
+        ? `<div style="margin-top: 14px;">
+             <a href="${e.gpsUrl}" target="_blank" style="display: inline-block; background-color: #06B3F8; color: #ffffff; padding: 10px 18px; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 4px;">
+               📍 Open Location on Google Maps
+             </a>
+           </div>`
+        : '';
+
+      return `
+        <div style="background: #ffffff; border: 1px solid #E3D3BC; padding: 20px; margin-top: 16px; border-radius: 4px;">
+          <h3 style="margin: 0 0 8px; font-size: 18px; color: #1a2a32;">${e.name}</h3>
+          <p style="margin: 0 0 6px; font-size: 14px; color: #5a6a72;">
+            📅 <strong>Date:</strong> ${formattedDate} ${formattedTime ? `at ${formattedTime}` : ''}
+          </p>
+          <p style="margin: 0 0 6px; font-size: 14px; color: #5a6a72;">
+            📍 <strong>Location / Venue:</strong> ${e.venueName ? `${e.venueName} — ` : ''}${e.location}
+          </p>
+          ${e.notes ? `<p style="margin: 6px 0 0; font-size: 13px; color: #5a6a72; font-style: italic;">Note: ${e.notes}</p>` : ''}
+          ${gpsButton}
+        </div>
+      `;
+    })
+    .join('');
 }
 
 export async function sendRsvpConfirmationEmail({
@@ -87,33 +132,36 @@ export async function sendRsvpConfirmationEmail({
   attendance: Attendance;
 }) {
   const resend = getResend();
-  const locationLine = rsvpLocationLine(attendance);
+  const eventDetailsHtml = buildEventDetailsHtml(attendance);
 
   if (!resend) {
-    console.log(`[Resend Unconfigured] RSVP confirmation for ${guestName} (${toEmail}): ${locationLine}`);
+    console.log(`[Resend Unconfigured] RSVP confirmation for ${guestName} (${toEmail})`);
     return { success: true, mocked: true, reason: 'RESEND_API_KEY not set in environment variables' };
   }
 
   try {
-    // 1. Send confirmation email to guest
+    // 1. Send confirmation email to guest with event location & Google Maps links
     const guestResult = await resend.emails.send({
       from: fromAddress(),
       to: [toEmail],
-      subject: `RSVP received — ${siteConfig.shortNames}`,
+      subject: `RSVP Confirmed — ${siteConfig.shortNames}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #EDEFEE; color: #1a2a32; border: 1px solid #E3D3BC;">
           <h1 style="font-size: 28px; text-align: center; color: #06B3F8; margin: 0 0 4px;">${siteConfig.shortNames}</h1>
           <p style="text-align: center; color: #EACA67; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 24px;">RSVP Confirmation</p>
           <p style="font-size: 16px; line-height: 1.6;">Dear ${guestName},</p>
           <p style="font-size: 16px; line-height: 1.6; color: #5a6a72;">
-            Thank you for your RSVP. ${locationLine}
+            Thank you for your RSVP! Here are your event details and venue location link(s):
           </p>
+
+          ${eventDetailsHtml}
+
           <p style="margin-top: 28px; font-size: 16px; color: #06B3F8;">With love,<br/><em>${siteConfig.shortNames}</em></p>
         </div>
       `,
     });
 
-    // 2. Also send RSVP Alert notification to host/admin email (Elisha)
+    // 2. Send RSVP Alert notification to admin (Elisha)
     if (siteConfig.primaryAdminEmail && siteConfig.primaryAdminEmail !== toEmail) {
       await resend.emails.send({
         from: fromAddress(),
@@ -125,7 +173,7 @@ export async function sendRsvpConfirmationEmail({
             <p><strong>Guest Name:</strong> ${guestName}</p>
             <p><strong>Email:</strong> ${toEmail}</p>
             <p><strong>Attendance:</strong> ${attendance}</p>
-            <p>View all responses in your <a href="${siteConfig.siteUrl}/admin/rsvps">Admin Panel</a>.</p>
+            <p>View all responses & venue details in your <a href="${siteConfig.siteUrl}/admin/rsvps">Admin Panel</a>.</p>
           </div>
         `,
       }).catch((e) => console.warn('[Admin RSVP Alert Error]', e));

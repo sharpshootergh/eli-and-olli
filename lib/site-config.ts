@@ -13,6 +13,9 @@ export interface WeddingEvent {
   /** 24h HH:MM or null */
   eventTime: string | null;
   location: string;
+  venueName?: string | null;
+  gpsUrl?: string | null;
+  notes?: string | null;
   sortOrder: number;
   /** Key used by RSVP attendance mapping */
   attendanceKey: 'traditional' | 'white';
@@ -58,6 +61,9 @@ export const siteConfig = {
       eventDate: '2026-12-12',
       eventTime: null,
       location: 'Abidjan, Ivory Coast',
+      venueName: 'Traditional Venue',
+      gpsUrl: 'https://maps.google.com/?q=Abidjan+Ivory+Coast',
+      notes: null,
       sortOrder: 1,
       attendanceKey: 'traditional' as const,
     },
@@ -67,6 +73,9 @@ export const siteConfig = {
       eventDate: '2026-12-19',
       eventTime: '12:00',
       location: 'Cape Coast, Ghana',
+      venueName: 'White Wedding Venue',
+      gpsUrl: 'https://maps.google.com/?q=Cape+Coast+Ghana',
+      notes: null,
       sortOrder: 2,
       attendanceKey: 'white' as const,
     },

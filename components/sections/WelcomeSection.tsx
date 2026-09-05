@@ -1,5 +1,6 @@
- 'use client';
+'use client';
 
+import { useEffect, useState } from 'react';
 import CountdownTimer from '@/components/CountdownTimer';
 import HeroSlideshow from '@/components/HeroSlideshow';
 import { useLanguage } from '@/components/LanguageProvider';
@@ -10,14 +11,31 @@ import {
   eventCountdownIso,
   type WeddingEvent,
 } from '@/lib/site-config';
+import { MapPin } from 'lucide-react';
 
 interface WelcomeSectionProps {
   events?: WeddingEvent[];
 }
 
-export default function WelcomeSection({ events = siteConfig.events }: WelcomeSectionProps) {
+export default function WelcomeSection({ events: initialEvents = siteConfig.events }: WelcomeSectionProps) {
   const { couple } = siteConfig;
   const { language, t } = useLanguage();
+  const [events, setEvents] = useState<WeddingEvent[]>(initialEvents);
+
+  useEffect(() => {
+    async function loadLiveEvents() {
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.events) && data.events.length > 0) {
+          setEvents(data.events);
+        }
+      } catch {
+        // Fall back to initialEvents
+      }
+    }
+    void loadLiveEvents();
+  }, []);
 
   return (
     <section id="welcome" className="scroll-mt-20">
@@ -59,26 +77,43 @@ export default function WelcomeSection({ events = siteConfig.events }: WelcomeSe
           {events.map((event) => (
             <article
               key={event.id}
-              className="bg-wedding-white border border-wedding-brown shadow-lg p-6 sm:p-8 space-y-4"
+              className="bg-wedding-white border border-wedding-brown shadow-lg p-6 sm:p-8 space-y-4 flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] tracking-[0.2em] uppercase text-wedding-blue font-medium">
-                    {event.id === 'event-traditional' ? t('traditionalWedding') : event.id === 'event-white' ? t('whiteWedding') : event.name}
-                  </p>
-                  <h2 className="font-serif text-2xl sm:text-3xl text-wedding-ink mt-1">
-                    {formatEventDate(event.eventDate, language)}
-                  </h2>
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] tracking-[0.2em] uppercase text-wedding-blue font-medium">
+                      {event.id === 'event-traditional' ? t('traditionalWedding') : event.id === 'event-white' ? t('whiteWedding') : event.name}
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl text-wedding-ink mt-1">
+                      {formatEventDate(event.eventDate, language)}
+                    </h2>
+                  </div>
+                  <span className="shrink-0 w-2 h-2 rounded-full bg-wedding-gold mt-2" aria-hidden />
                 </div>
-                <span className="shrink-0 w-2 h-2 rounded-full bg-wedding-gold mt-2" aria-hidden />
+                <p className="text-sm text-wedding-muted">
+                  <span className="text-wedding-ink font-medium">
+                    {formatEventTime(event.eventTime, language) ?? t('timeTbc')}
+                    <span className="mx-2 text-wedding-brown">·</span>
+                  </span>
+                  {event.venueName ? `${event.venueName}, ` : ''}{event.location}
+                </p>
+
+                {event.gpsUrl && (
+                  <div className="pt-1">
+                    <a
+                      href={event.gpsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-wedding-blue hover:underline font-semibold"
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>View Location on Google Maps</span>
+                    </a>
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-wedding-muted">
-                <span className="text-wedding-ink font-medium">
-                  {formatEventTime(event.eventTime, language) ?? t('timeTbc')}
-                  <span className="mx-2 text-wedding-brown">·</span>
-                </span>
-                {event.location}
-              </p>
+
               <CountdownTimer targetDate={eventCountdownIso(event)} variant="dark" />
             </article>
           ))}
