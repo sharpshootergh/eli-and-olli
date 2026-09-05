@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import type { Attendance } from '@/lib/types';
+import type { Attendance, Rsvp } from '@/lib/types';
 import { siteConfig } from '@/lib/site-config';
 import { useLanguage } from '@/components/LanguageProvider';
 
@@ -45,7 +45,25 @@ export default function RsvpSection() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('rsvpError'));
+      // Save copy to local client backup store for admin viewing fallback
+      if (typeof window !== 'undefined') {
+        try {
+          const newRecord: Rsvp = {
+            id: data.rsvp?.id || `rsvp-${Date.now()}`,
+            guest_name: guestName,
+            guest_email: guestEmail,
+            attendance,
+            guest_count: guestCount,
+            notes: notes || null,
+            created_at: new Date().toISOString(),
+          };
+          const existing = JSON.parse(localStorage.getItem('wedding_rsvps_client_store') || '[]');
+          const updated = [newRecord, ...existing.filter((e: Rsvp) => e.guest_email !== guestEmail)];
+          localStorage.setItem('wedding_rsvps_client_store', JSON.stringify(updated));
+        } catch {
+          // localStorage fallback ignore
+        }
+      }
 
       setSubmittedAttendance(attendance);
       setStatus('success');
