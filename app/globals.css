@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/*
+  Wedding palette — Tailwind v4 @theme tokens
+  Use: bg-wedding-blue, text-wedding-gold, border-wedding-brown, etc.
+*/
+@theme {
+  --color-wedding-blue: #06b3f8;
+  --color-wedding-brown: #e3d3bc;
+  --color-wedding-gold: #eaca67;
+  --color-wedding-white: #edefee;
+  --color-wedding-ink: #1a2a32;
+  --color-wedding-muted: #5a6a72;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-wedding-white);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    color: var(--color-wedding-ink);
+    background-color: var(--color-wedding-white);
+    background-image:
+      radial-gradient(ellipse 70% 45% at 15% 0%, rgba(6, 179, 248, 0.08), transparent),
+      radial-gradient(ellipse 50% 40% at 100% 5%, rgba(234, 202, 103, 0.12), transparent);
+    background-attachment: fixed;
+  }
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Cormorant Garamond", Georgia, serif;
+}
+
+.font-sans {
+  font-family: var(--font-sans), "Source Sans 3", system-ui, sans-serif;
+}
+
+.glass-card {
+  background: rgba(237, 239, 238, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-wedding-brown) 55%, transparent);
+}
+
+.glass-nav {
+  background: color-mix(in srgb, var(--color-wedding-white) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-wedding-brown) 40%, transparent);
+}
+
+.section-pad {
+  @apply px-4 sm:px-6 lg:px-8 py-20 md:py-28;
+}
+
+.section-title {
+  @apply font-serif text-4xl sm:text-5xl md:text-6xl text-wedding-ink tracking-tight;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 bg-wedding-blue text-white text-sm tracking-wide
+    hover:brightness-95 transition-all;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 border border-wedding-ink/20 text-wedding-ink text-sm tracking-wide
+    hover:bg-wedding-brown/40 transition-all;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-wedding-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-wedding-brown);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-wedding-blue);
+}
+
+@keyframes invite-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invite-fade {
+  animation: invite-fade-up 0.7s ease-out both;
+}
+
+/* Invitation — a photo-free nod to woven ceremonial textiles. */
+.invite-page {
+  color: #142a50;
+  background: #e9dfcd;
+}
+
+.invite-atmosphere {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255, 253, 247, 0.8), transparent 44%),
+    linear-gradient(90deg, rgba(20, 42, 80, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(185, 139, 46, 0.07) 1px, transparent 1px),
+    #e9dfcd;
+  background-size: auto, 24px 24px, 24px 24px, auto;
+}
+
+.invite-card {
+  overflow: hidden;
+  border: 1px solid rgba(20, 42, 80, 0.78);
+  background: #fffdf7;
+  box-shadow: 0 30px 80px -38px rgba(20, 42, 80, 0.65);
+}
+
+.invite-inner {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(20, 42, 80, 0.055) 1px, transparent 1.25px),
+    #fffdf7;
+  background-size: 14px 14px, auto;
+}
+
+.invite-language {
+  border: 1px solid rgba(20, 42, 80, 0.5);
+  background: rgba(255, 253, 247, 0.78);
+}
+
+.invite-pattern {
+  z-index: 1;
+  right: 0;
+  left: 0;
+  height: 55px;
+}
+
+.invite-pattern-top {
+  top: 0;
+  background-color: #16325c;
+  background-image:
+    linear-gradient(45deg, transparent 43%, #fffdf7 44% 56%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, #fffdf7 44% 56%, transparent 57%),
+    linear-gradient(90deg, transparent 40%, rgba(255, 253, 247, 0.92) 40% 60%, transparent 60%);
+  background-size: 36px 36px, 36px 36px, 72px 36px;
+}
+
+.invite-pattern-bottom {
+  bottom: 0;
+  background-color: #fffdf7;
+  background-image:
+    linear-gradient(45deg, transparent 44%, #bd8b2c 45% 55%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #bd8b2c 45% 55%, transparent 56%),
+    linear-gradient(90deg, transparent 42%, rgba(189, 139, 44, 0.95) 42% 58%, transparent 58%);
+  background-size: 36px 36px, 36px 36px, 72px 36px;
+  border-top: 1px solid rgba(189, 139, 44, 0.7);
+}
+
+.invite-side-motif {
+  position: absolute;
+  z-index: 2;
+  top: 112px;
+  bottom: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  width: 40px;
+}
+
+.invite-side-motif-left { left: 25px; }
+.invite-side-motif-right { right: 25px; }
+
+.invite-side-motif i {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0 auto;
+  border: 1px solid #b98b2e;
+  transform: rotate(45deg);
+  animation: invite-motif-glow 4s ease-in-out infinite;
+}
+
+.invite-side-motif i:nth-child(2) { animation-delay: -1s; }
+.invite-side-motif i:nth-child(3) { animation-delay: -2s; }
+.invite-side-motif i:nth-child(4) { animation-delay: -3s; }
+
+.invite-rsvp {
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid #142a50;
+  background: #142a50;
+  color: #fffdf7;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: transform 200ms ease, background-color 200ms ease, color 200ms ease;
+}
+
+.invite-rsvp:hover {
+  background: #b98b2e;
+  border-color: #b98b2e;
+  transform: translateY(-2px);
+}
+
+@keyframes invite-motif-glow {
+  0%, 100% { opacity: 0.55; transform: rotate(45deg) scale(0.9); }
+  50% { opacity: 1; transform: rotate(45deg) scale(1.14); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invite-fade {
+    animation: none;
+  }
+
+  .invite-side-motif i {
+    animation: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body,
+  .invite-page,
+  .invite-card,
+  .invite-inner,
+  .invite-pattern,
+  .invite-side-motif,
+  .invite-side-motif i {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .invite-page {
+    background: #e9dfcd !important;
+  }
+
+  .invite-card {
+    border-color: #142a50 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .invite-pattern { height: 36px; }
+
+  .invite-side-motif i {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: rotate(45deg) scale(1) !important;
+  }
+}
