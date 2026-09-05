@@ -41,6 +41,7 @@ export async function sendThankYouEmail({
       from: fromAddress(),
       to: [toEmail],
       subject: `Thank you for your gift, ${contributorName}`,
+      text: `Dear ${contributorName},\n\nThank you for your contribution of ${formatGhs(amountGHS)} toward "${goalTitle}".\n\nWith love,\n${siteConfig.shortNames}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #EDEFEE; color: #1a2a32;">
           <h1 style="font-size: 28px; text-align: center; color: #06B3F8; margin: 0 0 8px;">${siteConfig.shortNames}</h1>
@@ -78,6 +79,28 @@ function getActiveEvents(): WeddingEvent[] {
     // fallback
   }
   return siteConfig.events;
+}
+
+function buildEventDetailsText(attendance: Attendance): string {
+  if (attendance === 'none') {
+    return 'We will miss you — thank you for letting us know!';
+  }
+
+  const events = getActiveEvents();
+  const selectedEvents = events.filter((e) => {
+    if (attendance === 'both') return true;
+    if (attendance === 'traditional') return e.attendanceKey === 'traditional' || e.id.includes('traditional');
+    if (attendance === 'white') return e.attendanceKey === 'white' || e.id.includes('white');
+    return false;
+  });
+
+  return selectedEvents
+    .map((e) => {
+      const formattedDate = formatEventDate(e.eventDate, 'en');
+      const formattedTime = formatEventTime(e.eventTime, 'en');
+      return `• ${e.name}\n  Date: ${formattedDate} ${formattedTime ? `at ${formattedTime}` : ''}\n  Location: ${e.venueName ? `${e.venueName} — ` : ''}${e.location}\n  ${e.gpsUrl ? `Google Maps Link: ${e.gpsUrl}` : ''}\n`;
+    })
+    .join('\n');
 }
 
 function buildEventDetailsHtml(attendance: Attendance): string {
@@ -133,6 +156,7 @@ export async function sendRsvpConfirmationEmail({
 }) {
   const resend = getResend();
   const eventDetailsHtml = buildEventDetailsHtml(attendance);
+  const eventDetailsText = buildEventDetailsText(attendance);
 
   if (!resend) {
     console.log(`[Resend Unconfigured] RSVP confirmation for ${guestName} (${toEmail})`);
@@ -142,12 +166,13 @@ export async function sendRsvpConfirmationEmail({
   let guestError: unknown = null;
   let guestData: unknown = null;
 
-  // 1. Send confirmation email to guest
+  // 1. Send confirmation email to guest (with plain text fallback for spam score optimization)
   try {
     const response = await resend.emails.send({
       from: fromAddress(),
       to: [toEmail],
       subject: `RSVP Confirmed — ${siteConfig.shortNames}`,
+      text: `Dear ${guestName},\n\nThank you for your RSVP! Here are your event details and venue location link(s):\n\n${eventDetailsText}\n\nWith love,\n${siteConfig.shortNames}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 28px; background: #EDEFEE; color: #1a2a32; border: 1px solid #E3D3BC;">
           <h1 style="font-size: 28px; text-align: center; color: #06B3F8; margin: 0 0 4px;">${siteConfig.shortNames}</h1>
@@ -175,13 +200,14 @@ export async function sendRsvpConfirmationEmail({
     console.error('[Resend Guest Email Exception]', err);
   }
 
-  // 2. Send RSVP Alert notification to admin (Elisha - always registered in Resend)
+  // 2. Send RSVP Alert notification to admin (Elisha)
   if (siteConfig.primaryAdminEmail) {
     try {
       await resend.emails.send({
         from: fromAddress(),
         to: [siteConfig.primaryAdminEmail],
         subject: `🎉 New RSVP Received: ${guestName}`,
+        text: `New RSVP Alert!\n\nGuest Name: ${guestName}\nGuest Email: ${toEmail}\nAttendance: ${attendance}\n\n${eventDetailsText}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; color: #1a2a32; border: 1px solid #E3D3BC;">
             <h2 style="color: #06B3F8; margin-top: 0;">New RSVP Alert!</h2>
