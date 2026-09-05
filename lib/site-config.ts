@@ -75,8 +75,7 @@ export const siteConfig = {
   story: {
     videoType: (process.env.NEXT_PUBLIC_STORY_VIDEO_TYPE ?? 'youtube') as 'youtube' | 'mp4',
     youtubeUrl:
-      process.env.NEXT_PUBLIC_STORY_YOUTUBE_URL ??
-      'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      process.env.NEXT_PUBLIC_STORY_YOUTUBE_URL ?? '',
     mp4Url: process.env.NEXT_PUBLIC_STORY_MP4_URL ?? '',
     prose:
       process.env.NEXT_PUBLIC_STORY_PROSE ??
