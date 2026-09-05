@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://seguamour.com';
 
     // Amount in pesewas (1 GHS = 100 pesewas)
     const amountInPesewas = Math.round(Number(amount) * 100);
