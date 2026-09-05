@@ -45,13 +45,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     async function verifyAuth() {
-      if (
-        typeof window !== 'undefined' &&
-        sessionStorage.getItem('admin_demo_authenticated') === 'true'
-      ) {
-        setUserEmail(siteConfig.primaryAdminEmail);
-        setAuthorized(true);
-        return;
+      if (typeof window !== 'undefined') {
+        const isLocalAuth =
+          localStorage.getItem('admin_authenticated') === 'true' ||
+          sessionStorage.getItem('admin_demo_authenticated') === 'true' ||
+          document.cookie.includes('admin_authenticated=true');
+
+        if (isLocalAuth) {
+          const storedEmail =
+            localStorage.getItem('admin_user_email') || siteConfig.primaryAdminEmail;
+          setUserEmail(storedEmail);
+          setAuthorized(true);
+          return;
+        }
       }
 
       const supabase = createClient();
@@ -81,7 +87,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleSignOut = async () => {
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_authenticated');
+      localStorage.removeItem('admin_user_email');
       sessionStorage.removeItem('admin_demo_authenticated');
+      document.cookie = 'admin_authenticated=; path=/; max-age=0;';
     }
     const supabase = createClient();
     await supabase.auth.signOut();
