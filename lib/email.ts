@@ -136,12 +136,15 @@ export async function sendRsvpConfirmationEmail({
 
   if (!resend) {
     console.log(`[Resend Unconfigured] RSVP confirmation for ${guestName} (${toEmail})`);
-    return { success: true, mocked: true, reason: 'RESEND_API_KEY not set in environment variables' };
+    return { success: false, mocked: true, reason: 'RESEND_API_KEY not set in environment variables on Vercel' };
   }
 
+  let guestError: unknown = null;
+  let guestData: unknown = null;
+
+  // 1. Send confirmation email to guest
   try {
-    // 1. Send confirmation email to guest with event location & Google Maps links
-    const guestResult = await resend.emails.send({
+    const response = await resend.emails.send({
       from: fromAddress(),
       to: [toEmail],
       subject: `RSVP Confirmed — ${siteConfig.shortNames}`,
@@ -161,8 +164,20 @@ export async function sendRsvpConfirmationEmail({
       `,
     });
 
-    // 2. Send RSVP Alert notification to admin (Elisha)
-    if (siteConfig.primaryAdminEmail && siteConfig.primaryAdminEmail !== toEmail) {
+    if (response.error) {
+      guestError = response.error;
+      console.error('[Resend RSVP Guest Error]', response.error);
+    } else {
+      guestData = response.data;
+    }
+  } catch (err) {
+    guestError = err;
+    console.error('[Resend Guest Email Exception]', err);
+  }
+
+  // 2. Send RSVP Alert notification to admin (Elisha - always registered in Resend)
+  if (siteConfig.primaryAdminEmail) {
+    try {
       await resend.emails.send({
         from: fromAddress(),
         to: [siteConfig.primaryAdminEmail],
@@ -171,22 +186,23 @@ export async function sendRsvpConfirmationEmail({
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; color: #1a2a32; border: 1px solid #E3D3BC;">
             <h2 style="color: #06B3F8; margin-top: 0;">New RSVP Alert!</h2>
             <p><strong>Guest Name:</strong> ${guestName}</p>
-            <p><strong>Email:</strong> ${toEmail}</p>
-            <p><strong>Attendance:</strong> ${attendance}</p>
-            <p>View all responses & venue details in your <a href="${siteConfig.siteUrl}/admin/rsvps">Admin Panel</a>.</p>
+            <p><strong>Guest Email:</strong> ${toEmail}</p>
+            <p><strong>Attendance Choice:</strong> ${attendance}</p>
+            <hr style="border: none; border-top: 1px solid #E3D3BC; margin: 20px 0;" />
+            <h3>Venue & Event Info Sent:</h3>
+            ${eventDetailsHtml}
+            <p style="margin-top: 20px;">View all responses in your <a href="${siteConfig.siteUrl}/admin/rsvps">Admin Panel</a>.</p>
           </div>
         `,
-      }).catch((e) => console.warn('[Admin RSVP Alert Error]', e));
+      });
+    } catch (e) {
+      console.warn('[Admin RSVP Alert Exception]', e);
     }
-
-    if (guestResult.error) {
-      console.error('[Resend RSVP Guest Error]', guestResult.error);
-      return { success: false, error: guestResult.error };
-    }
-
-    return { success: true, data: guestResult.data };
-  } catch (err) {
-    console.error('[Resend RSVP Exception]', err);
-    return { success: false, error: err };
   }
+
+  if (guestError) {
+    return { success: false, error: guestError };
+  }
+
+  return { success: true, data: guestData };
 }
