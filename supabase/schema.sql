@@ -13,7 +13,24 @@ create table if not exists public.events (
   event_date date not null,
   event_time time,
   location text not null,
+  venue_name text,
+  gps_url text,
+  notes text,
   sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.site_events (
+  id text primary key,
+  name text not null,
+  event_date text not null,
+  event_time text,
+  location text not null,
+  venue_name text,
+  gps_url text,
+  notes text,
+  sort_order int not null default 0,
+  attendance_key text not null default 'traditional',
   created_at timestamptz not null default now()
 );
 
@@ -198,6 +215,7 @@ grant execute on function public.increment_goal_amount to service_role;
 -- ---------------------------------------------------------------------------
 
 alter table public.events enable row level security;
+alter table public.site_events enable row level security;
 alter table public.categories enable row level security;
 alter table public.goals enable row level security;
 alter table public.contributions enable row level security;
