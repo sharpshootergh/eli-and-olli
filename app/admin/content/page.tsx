@@ -139,8 +139,12 @@ export default function AdminContentPage() {
     if (!mediaUrl.trim() || (section === 'hero' && mediaType !== 'image')) return;
 
     const sort_order = editingItem ? editingItem.sort_order : items.filter((item) => item.section === section).length + 1;
+    const generatedId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `10000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
+
     const targetItem: SiteMedia = {
-      id: editingItem ? editingItem.id : `media-${Date.now()}`,
+      id: editingItem ? editingItem.id : generatedId,
       section,
       media_url: mediaUrl.trim(),
       mobile_media_url: mobileMediaUrl.trim() || null,
@@ -159,11 +163,15 @@ export default function AdminContentPage() {
     }
 
     try {
-      await fetch('/api/content', {
+      const res = await fetch('/api/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: targetItem }),
       });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.items)) {
+        setItems(data.items);
+      }
       setSuccessMsg(editingItem ? 'Content updated successfully!' : 'Content item saved successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch {

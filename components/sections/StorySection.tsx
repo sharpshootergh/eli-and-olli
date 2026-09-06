@@ -61,26 +61,34 @@ export default function StorySection() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
         <div className="space-y-6">
-          <div className="relative aspect-[4/5] w-full overflow-hidden border border-wedding-brown">
-            <Image
-              src={images[0].src}
-              alt={`${shortNames} — a quiet moment`}
-              fill
-              className={`object-cover ${images[0].mobileSrc ? 'hidden sm:block' : ''}`}
-              style={{ objectPosition: images[0].position }}
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
-            {images[0].mobileSrc && (
-              <Image
-                src={images[0].mobileSrc}
-                alt={`${shortNames} — a quiet moment`}
-                fill
-                className="object-cover block sm:hidden"
-                style={{ objectPosition: images[0].mobilePosition }}
-                sizes="100vw"
-              />
-            )}
-          </div>
+          {(() => {
+            const hasMobileOverride0 = Boolean(
+              (images[0].mobileSrc && images[0].mobileSrc !== images[0].src) ||
+              (images[0].mobilePosition && images[0].mobilePosition !== images[0].position)
+            );
+            return (
+              <div className="relative aspect-[4/5] w-full overflow-hidden border border-wedding-brown">
+                <Image
+                  src={images[0].src}
+                  alt={`${shortNames} — a quiet moment`}
+                  fill
+                  className={`object-cover ${hasMobileOverride0 ? 'hidden sm:block' : ''}`}
+                  style={{ objectPosition: images[0].position }}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+                {hasMobileOverride0 && (
+                  <Image
+                    src={images[0].mobileSrc || images[0].src}
+                    alt={`${shortNames} — a quiet moment`}
+                    fill
+                    className="object-cover block sm:hidden"
+                    style={{ objectPosition: images[0].mobilePosition || images[0].position }}
+                    sizes="100vw"
+                  />
+                )}
+              </div>
+            );
+          })()}
           {images[1] && (
             <div className="relative aspect-[16/10] w-full overflow-hidden border border-wedding-brown hidden sm:block">
               <Image

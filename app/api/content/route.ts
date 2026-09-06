@@ -8,7 +8,7 @@ const MEDIA_FILE = path.join('/tmp', 'wedding_media_store.json');
 
 export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
-    id: 'hero-1',
+    id: '10000000-0000-4000-a000-000000000001',
     section: 'hero',
     media_url: '/hero/TBC5-72377c25-44f5-4487-90a6-32e6285327f6.jpg',
     mobile_media_url: null,
@@ -20,7 +20,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 1,
   },
   {
-    id: 'hero-2',
+    id: '10000000-0000-4000-a000-000000000002',
     section: 'hero',
     media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
     mobile_media_url: null,
@@ -32,7 +32,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 2,
   },
   {
-    id: 'hero-3',
+    id: '10000000-0000-4000-a000-000000000003',
     section: 'hero',
     media_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.jpg',
     mobile_media_url: null,
@@ -44,7 +44,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 3,
   },
   {
-    id: 'hero-4',
+    id: '10000000-0000-4000-a000-000000000004',
     section: 'hero',
     media_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.jpg',
     mobile_media_url: null,
@@ -56,7 +56,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 4,
   },
   {
-    id: 'hero-5',
+    id: '10000000-0000-4000-a000-000000000005',
     section: 'hero',
     media_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.jpg',
     mobile_media_url: null,
@@ -68,7 +68,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 5,
   },
   {
-    id: 'hero-6',
+    id: '10000000-0000-4000-a000-000000000006',
     section: 'hero',
     media_url: '/hero/TBC-90ef3dd1-4489-43a6-82e5-0b53e9280206.jpg',
     mobile_media_url: null,
@@ -80,7 +80,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 6,
   },
   {
-    id: 'hero-7',
+    id: '10000000-0000-4000-a000-000000000007',
     section: 'hero',
     media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
     mobile_media_url: null,
@@ -92,7 +92,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 7,
   },
   {
-    id: 'hero-8',
+    id: '10000000-0000-4000-a000-000000000008',
     section: 'hero',
     media_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.jpg',
     mobile_media_url: null,
@@ -104,7 +104,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 8,
   },
   {
-    id: 'hero-9',
+    id: '10000000-0000-4000-a000-000000000009',
     section: 'hero',
     media_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.jpg',
     mobile_media_url: null,
@@ -116,7 +116,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 9,
   },
   {
-    id: 'hero-10',
+    id: '10000000-0000-4000-a000-000000000010',
     section: 'hero',
     media_url: '/hero/TBC17-9734aa80-3a09-4d7e-98d1-3059177cdaa4.jpg',
     mobile_media_url: null,
@@ -128,7 +128,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 10,
   },
   {
-    id: 'hero-11',
+    id: '10000000-0000-4000-a000-000000000011',
     section: 'hero',
     media_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.jpg',
     mobile_media_url: null,
@@ -140,7 +140,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 11,
   },
   {
-    id: 'story-1',
+    id: '20000000-0000-4000-a000-000000000001',
     section: 'story',
     media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
     mobile_media_url: null,
@@ -152,7 +152,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
     sort_order: 1,
   },
   {
-    id: 'story-2',
+    id: '20000000-0000-4000-a000-000000000002',
     section: 'story',
     media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
     mobile_media_url: null,
@@ -177,7 +177,6 @@ function readFallbackMedia(): SiteMedia[] {
   } catch {
     // Ignore read errors
   }
-  // Initialize with defaults if empty
   writeFallbackMedia(DEFAULT_SITE_MEDIA);
   return DEFAULT_SITE_MEDIA;
 }
@@ -211,7 +210,6 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (!error && data) {
       if (data.length === 0) {
-        // Seed default items into DB if database is empty
         try {
           const itemsToInsert = section
             ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
@@ -230,9 +228,24 @@ export async function GET(request: Request) {
   }
 
   const mergedMap = new Map<string, SiteMedia>();
-  [...fallback, ...dbItems].forEach((item) => {
+
+  // 1. Populate from dbItems first
+  dbItems.forEach((item) => {
     if (!section || item.section === section) {
       mergedMap.set(item.id, item);
+    }
+  });
+
+  // 2. Overlay fallback items so latest local edits & mobile fields are preserved
+  fallback.forEach((item) => {
+    if (!section || item.section === section) {
+      const existing = mergedMap.get(item.id);
+      mergedMap.set(item.id, {
+        ...existing,
+        ...item,
+        mobile_media_url: item.mobile_media_url ?? existing?.mobile_media_url ?? null,
+        mobile_object_position: item.mobile_object_position ?? existing?.mobile_object_position ?? item.object_position,
+      });
     }
   });
 
@@ -257,7 +270,7 @@ export async function POST(request: Request) {
       } else {
         current.push({
           ...item,
-          id: item.id || `media-${Date.now()}`,
+          id: item.id || `10000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`,
           sort_order: item.sort_order || current.length + 1,
         });
       }
@@ -268,12 +281,26 @@ export async function POST(request: Request) {
     try {
       const supabase = createAdminClient();
       if (item) {
-        await supabase.from('site_media').upsert(item);
+        const { error } = await supabase.from('site_media').upsert(item);
+        if (error) {
+          console.error('[Supabase content upsert error]', error);
+          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+            const { mobile_media_url, mobile_object_position, ...dbItem } = item;
+            await supabase.from('site_media').upsert(dbItem);
+          }
+        }
       } else if (Array.isArray(items)) {
-        await supabase.from('site_media').upsert(items);
+        const { error } = await supabase.from('site_media').upsert(items);
+        if (error) {
+          console.error('[Supabase content upsert items error]', error);
+          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+            const dbItems = items.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
+            await supabase.from('site_media').upsert(dbItems);
+          }
+        }
       }
-    } catch {
-      // Supabase unconfigured
+    } catch (err) {
+      console.error('[Supabase content catch error]', err);
     }
 
     return NextResponse.json({ success: true, items: current });
@@ -309,4 +336,5 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 }
+
 

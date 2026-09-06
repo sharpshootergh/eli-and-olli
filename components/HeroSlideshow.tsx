@@ -128,7 +128,10 @@ export default function HeroSlideshow() {
     <div className="absolute inset-0" aria-hidden="true">
       {visibleSlides.map((slide, index) => {
         const isActive = index === activeSlide;
-        const hasSeparateMobileImage = Boolean(slide.mobileSrc && slide.mobileSrc !== slide.src);
+        const hasMobileOverride = Boolean(
+          (slide.mobileSrc && slide.mobileSrc !== slide.src) ||
+          (slide.mobilePosition && slide.mobilePosition !== slide.position)
+        );
 
         return (
           <div
@@ -145,13 +148,13 @@ export default function HeroSlideshow() {
               priority={index === 0}
               sizes="100vw"
               style={{ objectPosition: slide.position }}
-              className={`object-cover ${hasSeparateMobileImage ? 'hidden sm:block' : ''}`}
+              className={`object-cover ${hasMobileOverride ? 'hidden sm:block' : ''}`}
             />
 
-            {/* Separate Mobile Image if configured */}
-            {hasSeparateMobileImage && slide.mobileSrc && (
+            {/* Mobile Image (if custom image or custom focal position is configured) */}
+            {hasMobileOverride && (
               <Image
-                src={slide.mobileSrc}
+                src={slide.mobileSrc || slide.src}
                 alt=""
                 fill
                 priority={index === 0}
