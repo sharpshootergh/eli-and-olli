@@ -165,20 +165,19 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   },
 ];
 
-function readFallbackMedia(): SiteMedia[] {
+function readFallbackMedia(): SiteMedia[] | null {
   try {
     if (fs.existsSync(MEDIA_FILE)) {
       const raw = fs.readFileSync(MEDIA_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
   } catch {
     // Ignore read errors
   }
-  writeFallbackMedia(DEFAULT_SITE_MEDIA);
-  return DEFAULT_SITE_MEDIA;
+  return null;
 }
 
 function writeFallbackMedia(items: SiteMedia[]) {
@@ -194,7 +193,7 @@ export async function GET(request: Request) {
   const section = searchParams.get('section');
 
   let fallback = readFallbackMedia();
-  if (fallback.length === 0) {
+  if (fallback === null) {
     fallback = DEFAULT_SITE_MEDIA;
     writeFallbackMedia(fallback);
   }
@@ -209,7 +208,7 @@ export async function GET(request: Request) {
     }
     const { data, error } = await query;
     if (!error && data) {
-      if (data.length === 0) {
+      if (data.length === 0 && fallback.length === 0) {
         try {
           const itemsToInsert = section
             ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
@@ -227,29 +226,24 @@ export async function GET(request: Request) {
     // DB unconfigured
   }
 
-  const mergedMap = new Map<string, SiteMedia>();
-
-  // 1. Populate from dbItems first
+  const dbMap = new Map<string, SiteMedia>();
   dbItems.forEach((item) => {
-    if (!section || item.section === section) {
-      mergedMap.set(item.id, item);
-    }
+    dbMap.set(item.id, item);
+    if (item.media_url) dbMap.set(item.media_url, item);
   });
 
-  // 2. Overlay fallback items so latest local edits & mobile fields are preserved
-  fallback.forEach((item) => {
-    if (!section || item.section === section) {
-      const existing = mergedMap.get(item.id);
-      mergedMap.set(item.id, {
-        ...existing,
+  const items = fallback
+    .filter((item) => !section || item.section === section)
+    .map((item) => {
+      const dbMatch = dbMap.get(item.id) || dbMap.get(item.media_url);
+      return {
+        ...dbMatch,
         ...item,
-        mobile_media_url: item.mobile_media_url ?? existing?.mobile_media_url ?? null,
-        mobile_object_position: item.mobile_object_position ?? existing?.mobile_object_position ?? item.object_position,
-      });
-    }
-  });
-
-  const items = Array.from(mergedMap.values()).sort((a, b) => a.sort_order - b.sort_order);
+        mobile_media_url: item.mobile_media_url ?? dbMatch?.mobile_media_url ?? null,
+        mobile_object_position: item.mobile_object_position ?? dbMatch?.mobile_object_position ?? item.object_position,
+      };
+    })
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   return NextResponse.json({ success: true, items });
 }
@@ -260,6 +254,9 @@ export async function POST(request: Request) {
     const { item, items } = body;
 
     let current = readFallbackMedia();
+    if (current === null) {
+      current = DEFAULT_SITE_MEDIA;
+    }
 
     if (Array.isArray(items)) {
       current = items;
@@ -319,13 +316,21 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
     }
 
-    const current = readFallbackMedia();
+    let current = readFallbackMedia();
+    if (current === null) {
+      current = DEFAULT_SITE_MEDIA;
+    }
+
+    const itemToDelete = current.find((item) => item.id === id);
     const filtered = current.filter((item) => item.id !== id);
     writeFallbackMedia(filtered);
 
     try {
       const supabase = createAdminClient();
       await supabase.from('site_media').delete().eq('id', id);
+      if (itemToDelete?.media_url) {
+        await supabase.from('site_media').delete().eq('media_url', itemToDelete.media_url);
+      }
     } catch {
       // Supabase unconfigured
     }
@@ -336,5 +341,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 }
+
 
 

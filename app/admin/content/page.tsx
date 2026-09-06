@@ -186,7 +186,11 @@ export default function AdminContentPage() {
     if (editingItem?.id === id) resetForm();
     setItems((current) => current.filter((item) => item.id !== id));
     try {
-      await fetch(`/api/content?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/content?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.items)) {
+        setItems(data.items);
+      }
     } catch {
       // Local state updated
     }
