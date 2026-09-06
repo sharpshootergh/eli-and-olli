@@ -248,6 +248,15 @@ export async function GET(request: Request) {
   return NextResponse.json({ success: true, items });
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function sanitizeUUID(id?: string | null): string {
+  if (id && UUID_REGEX.test(id)) {
+    return id;
+  }
+  return `10000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -259,16 +268,16 @@ export async function POST(request: Request) {
     }
 
     if (Array.isArray(items)) {
-      current = items;
+      current = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
     } else if (item) {
-      const idx = current.findIndex((i) => i.id === item.id);
+      const sanitizedItem = { ...item, id: sanitizeUUID(item.id) };
+      const idx = current.findIndex((i) => i.id === sanitizedItem.id);
       if (idx >= 0) {
-        current[idx] = { ...current[idx], ...item };
+        current[idx] = { ...current[idx], ...sanitizedItem };
       } else {
         current.push({
-          ...item,
-          id: item.id || `10000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`,
-          sort_order: item.sort_order || current.length + 1,
+          ...sanitizedItem,
+          sort_order: sanitizedItem.sort_order || current.length + 1,
         });
       }
     }
@@ -278,20 +287,22 @@ export async function POST(request: Request) {
     try {
       const supabase = createAdminClient();
       if (item) {
-        const { error } = await supabase.from('site_media').upsert(item);
+        const itemToUpsert = { ...item, id: sanitizeUUID(item.id) };
+        const { error } = await supabase.from('site_media').upsert(itemToUpsert);
         if (error) {
           console.error('[Supabase content upsert error]', error);
           if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-            const { mobile_media_url, mobile_object_position, ...dbItem } = item;
+            const { mobile_media_url, mobile_object_position, ...dbItem } = itemToUpsert;
             await supabase.from('site_media').upsert(dbItem);
           }
         }
       } else if (Array.isArray(items)) {
-        const { error } = await supabase.from('site_media').upsert(items);
+        const itemsToUpsert = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
+        const { error } = await supabase.from('site_media').upsert(itemsToUpsert);
         if (error) {
           console.error('[Supabase content upsert items error]', error);
           if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-            const dbItems = items.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
+            const dbItems = itemsToUpsert.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
             await supabase.from('site_media').upsert(dbItems);
           }
         }
@@ -327,7 +338,9 @@ export async function DELETE(request: Request) {
 
     try {
       const supabase = createAdminClient();
-      await supabase.from('site_media').delete().eq('id', id);
+      if (UUID_REGEX.test(id)) {
+        await supabase.from('site_media').delete().eq('id', id);
+      }
       if (itemToDelete?.media_url) {
         await supabase.from('site_media').delete().eq('media_url', itemToDelete.media_url);
       }
