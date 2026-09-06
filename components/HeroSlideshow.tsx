@@ -5,7 +5,14 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { SiteMedia } from '@/lib/types';
 
-const slides = [
+interface SlideItem {
+  src: string;
+  mobileSrc?: string | null;
+  position: string;
+  mobilePosition?: string | null;
+}
+
+const slides: SlideItem[] = [
   {
     src: '/hero/TBC5-72377c25-44f5-4487-90a6-32e6285327f6.jpg',
     position: 'center 25%',
@@ -56,7 +63,7 @@ const SLIDE_INTERVAL_MS = 6000;
 
 export default function HeroSlideshow() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [managedSlides, setManagedSlides] = useState<typeof slides | null>(null);
+  const [managedSlides, setManagedSlides] = useState<SlideItem[] | null>(null);
 
   useEffect(() => {
     async function loadSlides() {
@@ -67,7 +74,9 @@ export default function HeroSlideshow() {
           setManagedSlides(
             (data.items as SiteMedia[]).map((item) => ({
               src: item.media_url,
+              mobileSrc: item.mobile_media_url,
               position: item.object_position || 'center 25%',
+              mobilePosition: item.mobile_object_position || item.object_position || 'center 25%',
             }))
           );
           return;
@@ -85,7 +94,9 @@ export default function HeroSlideshow() {
           setManagedSlides(
             (dbData as SiteMedia[]).map((item) => ({
               src: item.media_url,
+              mobileSrc: item.mobile_media_url,
               position: item.object_position || 'center 25%',
+              mobilePosition: item.mobile_object_position || item.object_position || 'center 25%',
             }))
           );
         }
@@ -115,20 +126,44 @@ export default function HeroSlideshow() {
 
   return (
     <div className="absolute inset-0" aria-hidden="true">
-      {visibleSlides.map((slide, index) => (
-        <Image
-          key={slide.src}
-          src={slide.src}
-          alt=""
-          fill
-          priority={index === 0}
-          sizes="100vw"
-          style={{ objectPosition: slide.position }}
-          className={`object-cover transition-opacity duration-1000 ease-in-out ${
-            index === activeSlide ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
+      {visibleSlides.map((slide, index) => {
+        const isActive = index === activeSlide;
+        const hasSeparateMobileImage = Boolean(slide.mobileSrc && slide.mobileSrc !== slide.src);
+
+        return (
+          <div
+            key={`${slide.src}-${index}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              isActive ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {/* Desktop / Default Image */}
+            <Image
+              src={slide.src}
+              alt=""
+              fill
+              priority={index === 0}
+              sizes="100vw"
+              style={{ objectPosition: slide.position }}
+              className={`object-cover ${hasSeparateMobileImage ? 'hidden sm:block' : ''}`}
+            />
+
+            {/* Separate Mobile Image if configured */}
+            {hasSeparateMobileImage && slide.mobileSrc && (
+              <Image
+                src={slide.mobileSrc}
+                alt=""
+                fill
+                priority={index === 0}
+                sizes="100vw"
+                style={{ objectPosition: slide.mobilePosition || slide.position }}
+                className="object-cover block sm:hidden"
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
+

@@ -61,10 +61,12 @@ export interface SiteMedia {
   id: string;
   section: SiteMediaSection;
   media_url: string;
+  mobile_media_url?: string | null;
   media_type: MediaType;
   video_provider: VideoProvider;
   caption: string | null;
   object_position: string;
+  mobile_object_position?: string | null;
   sort_order: number;
   created_at?: string;
 }

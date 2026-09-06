@@ -97,10 +97,12 @@ create table if not exists public.site_media (
   id uuid primary key default gen_random_uuid(),
   section text not null check (section in ('hero', 'story')),
   media_url text not null,
+  mobile_media_url text,
   media_type text not null check (media_type in ('image', 'video')),
   video_provider text not null default 'file' check (video_provider in ('file', 'youtube')),
   caption text,
   object_position text not null default 'center center',
+  mobile_object_position text,
   sort_order int not null default 0,
   created_at timestamptz not null default now()
 );
@@ -382,6 +384,12 @@ alter table public.moments_photos
 
 alter table public.goals
   add column if not exists contributor_count int not null default 0;
+
+alter table public.site_media
+  add column if not exists mobile_media_url text;
+
+alter table public.site_media
+  add column if not exists mobile_object_position text;
 
 do $$
 begin

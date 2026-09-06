@@ -6,6 +6,165 @@ import path from 'path';
 
 const MEDIA_FILE = path.join('/tmp', 'wedding_media_store.json');
 
+export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
+  {
+    id: 'hero-1',
+    section: 'hero',
+    media_url: '/hero/TBC5-72377c25-44f5-4487-90a6-32e6285327f6.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 1',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 1,
+  },
+  {
+    id: 'hero-2',
+    section: 'hero',
+    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 2',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 2,
+  },
+  {
+    id: 'hero-3',
+    section: 'hero',
+    media_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 3',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 3,
+  },
+  {
+    id: 'hero-4',
+    section: 'hero',
+    media_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 4',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 4,
+  },
+  {
+    id: 'hero-5',
+    section: 'hero',
+    media_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 5',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 5,
+  },
+  {
+    id: 'hero-6',
+    section: 'hero',
+    media_url: '/hero/TBC-90ef3dd1-4489-43a6-82e5-0b53e9280206.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 6',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 6,
+  },
+  {
+    id: 'hero-7',
+    section: 'hero',
+    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 7',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 7,
+  },
+  {
+    id: 'hero-8',
+    section: 'hero',
+    media_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 8',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 8,
+  },
+  {
+    id: 'hero-9',
+    section: 'hero',
+    media_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 9',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 9,
+  },
+  {
+    id: 'hero-10',
+    section: 'hero',
+    media_url: '/hero/TBC17-9734aa80-3a09-4d7e-98d1-3059177cdaa4.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 10',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 10,
+  },
+  {
+    id: 'hero-11',
+    section: 'hero',
+    media_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Hero photo 11',
+    object_position: 'center 25%',
+    mobile_object_position: 'center 25%',
+    sort_order: 11,
+  },
+  {
+    id: 'story-1',
+    section: 'story',
+    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Elisha & Ollidia',
+    object_position: 'left',
+    mobile_object_position: 'center',
+    sort_order: 1,
+  },
+  {
+    id: 'story-2',
+    section: 'story',
+    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
+    mobile_media_url: null,
+    media_type: 'image',
+    video_provider: 'file',
+    caption: 'Celebrating together',
+    object_position: 'left',
+    mobile_object_position: 'center',
+    sort_order: 2,
+  },
+];
+
 function readFallbackMedia(): SiteMedia[] {
   try {
     if (fs.existsSync(MEDIA_FILE)) {
@@ -18,7 +177,9 @@ function readFallbackMedia(): SiteMedia[] {
   } catch {
     // Ignore read errors
   }
-  return [];
+  // Initialize with defaults if empty
+  writeFallbackMedia(DEFAULT_SITE_MEDIA);
+  return DEFAULT_SITE_MEDIA;
 }
 
 function writeFallbackMedia(items: SiteMedia[]) {
@@ -33,7 +194,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const section = searchParams.get('section');
 
-  const fallback = readFallbackMedia();
+  let fallback = readFallbackMedia();
+  if (fallback.length === 0) {
+    fallback = DEFAULT_SITE_MEDIA;
+    writeFallbackMedia(fallback);
+  }
+
   let dbItems: SiteMedia[] = [];
 
   try {
@@ -44,7 +210,20 @@ export async function GET(request: Request) {
     }
     const { data, error } = await query;
     if (!error && data) {
-      dbItems = data as SiteMedia[];
+      if (data.length === 0) {
+        // Seed default items into DB if database is empty
+        try {
+          const itemsToInsert = section
+            ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
+            : DEFAULT_SITE_MEDIA;
+          await supabase.from('site_media').upsert(itemsToInsert);
+          dbItems = itemsToInsert;
+        } catch {
+          // Ignore seed error
+        }
+      } else {
+        dbItems = data as SiteMedia[];
+      }
     }
   } catch {
     // DB unconfigured
@@ -130,3 +309,4 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 }
+
