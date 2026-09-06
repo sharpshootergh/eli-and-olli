@@ -15,15 +15,21 @@ export default function StorySection() {
   useEffect(() => {
     async function loadStoryMedia() {
       try {
+        const res = await fetch('/api/content?section=story');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setMedia(data.items as SiteMedia[]);
+          return;
+        }
         const supabase = createClient();
-        const { data, error } = await supabase
+        const { data: dbData, error } = await supabase
           .from('site_media')
           .select('*')
           .eq('section', 'story')
           .order('sort_order', { ascending: true });
-        if (!error && data?.length) setMedia(data as SiteMedia[]);
+        if (!error && dbData?.length) setMedia(dbData as SiteMedia[]);
       } catch {
-        // Bundled content remains visible until Supabase content is configured.
+        // Fallback
       }
     }
     void loadStoryMedia();

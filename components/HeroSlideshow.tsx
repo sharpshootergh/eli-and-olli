@@ -61,24 +61,36 @@ export default function HeroSlideshow() {
   useEffect(() => {
     async function loadSlides() {
       try {
+        const res = await fetch('/api/content?section=hero');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setManagedSlides(
+            (data.items as SiteMedia[]).map((item) => ({
+              src: item.media_url,
+              position: item.object_position || 'center 25%',
+            }))
+          );
+          return;
+        }
+
         const supabase = createClient();
-        const { data, error } = await supabase
+        const { data: dbData, error } = await supabase
           .from('site_media')
           .select('*')
           .eq('section', 'hero')
           .eq('media_type', 'image')
           .order('sort_order', { ascending: true });
 
-        if (!error && data?.length) {
+        if (!error && dbData?.length) {
           setManagedSlides(
-            (data as SiteMedia[]).map((item) => ({
+            (dbData as SiteMedia[]).map((item) => ({
               src: item.media_url,
-              position: item.object_position || 'center center',
+              position: item.object_position || 'center 25%',
             }))
           );
         }
       } catch {
-        // Keep the bundled images when content management is not configured yet.
+        // Fallback
       }
     }
 
