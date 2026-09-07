@@ -111,6 +111,21 @@ export default function AdminContentPage() {
       setUploadingMobile(true);
     }
 
+    const fallbackUpload = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const upData = await res.json();
+        if (upData.success && upData.url) {
+          if (target === 'desktop') setMediaUrl(upData.url);
+          else setMobileMediaUrl(upData.url);
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    };
+
     try {
       const supabase = createClient();
       const filename = `content-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
@@ -120,14 +135,10 @@ export default function AdminContentPage() {
         if (target === 'desktop') setMediaUrl(data.publicUrl);
         else setMobileMediaUrl(data.publicUrl);
       } else {
-        const blobUrl = URL.createObjectURL(file);
-        if (target === 'desktop') setMediaUrl(blobUrl);
-        else setMobileMediaUrl(blobUrl);
+        await fallbackUpload();
       }
     } catch {
-      const blobUrl = URL.createObjectURL(file);
-      if (target === 'desktop') setMediaUrl(blobUrl);
-      else setMobileMediaUrl(blobUrl);
+      await fallbackUpload();
     } finally {
       if (target === 'desktop') setUploadingDesktop(false);
       else setUploadingMobile(false);

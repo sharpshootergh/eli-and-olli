@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SiteMedia } from '@/lib/types';
-import fs from 'fs';
-import path from 'path';
+import { readJson, writeJson } from '@/lib/storage';
 
-const MEDIA_FILE = path.join('/tmp', 'wedding_media_store.json');
+const STORAGE_FILE = 'wedding_media_store.json';
 
 export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
@@ -165,39 +164,19 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   },
 ];
 
-function readFallbackMedia(): SiteMedia[] | null {
-  try {
-    if (fs.existsSync(MEDIA_FILE)) {
-      const raw = fs.readFileSync(MEDIA_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch {
-    // Ignore read errors
-  }
-  return null;
+function readFallbackMedia(): SiteMedia[] {
+  return readJson<SiteMedia[]>(STORAGE_FILE, DEFAULT_SITE_MEDIA);
 }
 
 function writeFallbackMedia(items: SiteMedia[]) {
-  try {
-    fs.writeFileSync(MEDIA_FILE, JSON.stringify(items, null, 2), 'utf-8');
-  } catch {
-    // Ignore write errors
-  }
+  writeJson(STORAGE_FILE, items);
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const section = searchParams.get('section');
 
-  let fallback = readFallbackMedia();
-  if (fallback === null) {
-    fallback = DEFAULT_SITE_MEDIA;
-    writeFallbackMedia(fallback);
-  }
-
+  const fallback = readFallbackMedia();
   let dbItems: SiteMedia[] = [];
 
   try {
@@ -207,42 +186,18 @@ export async function GET(request: Request) {
       query = query.eq('section', section);
     }
     const { data, error } = await query;
-    if (!error && data) {
-      if (data.length === 0 && fallback.length === 0) {
-        try {
-          const itemsToInsert = section
-            ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
-            : DEFAULT_SITE_MEDIA;
-          await supabase.from('site_media').upsert(itemsToInsert);
-          dbItems = itemsToInsert;
-        } catch {
-          // Ignore seed error
-        }
-      } else {
-        dbItems = data as SiteMedia[];
-      }
+    if (!error && data && data.length > 0) {
+      dbItems = data as SiteMedia[];
     }
   } catch {
     // DB unconfigured
   }
 
-  const dbMap = new Map<string, SiteMedia>();
-  dbItems.forEach((item) => {
-    dbMap.set(item.id, item);
-    if (item.media_url) dbMap.set(item.media_url, item);
-  });
+  // Use fallback if DB is empty or unconfigured
+  const source = dbItems.length > 0 ? dbItems : fallback;
 
-  const items = fallback
+  const items = source
     .filter((item) => !section || item.section === section)
-    .map((item) => {
-      const dbMatch = dbMap.get(item.id) || dbMap.get(item.media_url);
-      return {
-        ...dbMatch,
-        ...item,
-        mobile_media_url: item.mobile_media_url ?? dbMatch?.mobile_media_url ?? null,
-        mobile_object_position: item.mobile_object_position ?? dbMatch?.mobile_object_position ?? item.object_position,
-      };
-    })
     .sort((a, b) => a.sort_order - b.sort_order);
 
   return NextResponse.json({ success: true, items });
@@ -263,9 +218,6 @@ export async function POST(request: Request) {
     const { item, items } = body;
 
     let current = readFallbackMedia();
-    if (current === null) {
-      current = DEFAULT_SITE_MEDIA;
-    }
 
     if (Array.isArray(items)) {
       current = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
@@ -328,10 +280,6 @@ export async function DELETE(request: Request) {
     }
 
     let current = readFallbackMedia();
-    if (current === null) {
-      current = DEFAULT_SITE_MEDIA;
-    }
-
     const itemToDelete = current.find((item) => item.id === id);
     const filtered = current.filter((item) => item.id !== id);
     writeFallbackMedia(filtered);
@@ -354,6 +302,3 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 }
-
-
-

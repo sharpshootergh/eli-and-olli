@@ -1,57 +1,41 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { sendRsvpConfirmationEmail } from '@/lib/email';
 import type { Attendance, Rsvp } from '@/lib/types';
-import fs from 'fs';
-import path from 'path';
+import { readJson, writeJson } from '@/lib/storage';
 
 const VALID: Attendance[] = ['traditional', 'white', 'both', 'none'];
-const FALLBACK_FILE = path.join('/tmp', 'wedding_rsvps_store.json');
-
-// In-memory fallback cache
-let memoryRsvps: Rsvp[] = [];
+const STORAGE_FILE = 'wedding_rsvps_store.json';
 
 function readFallbackRsvps(): Rsvp[] {
-  try {
-    if (fs.existsSync(FALLBACK_FILE)) {
-      const raw = fs.readFileSync(FALLBACK_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        memoryRsvps = parsed;
-        return memoryRsvps;
-      }
-    }
-  } catch {
-    // Ignore read errors
-  }
-  return memoryRsvps;
+  return readJson<Rsvp[]>(STORAGE_FILE, []);
 }
 
 function writeFallbackRsvps(rsvps: Rsvp[]) {
-  memoryRsvps = rsvps;
-  try {
-    fs.writeFileSync(FALLBACK_FILE, JSON.stringify(rsvps, null, 2), 'utf-8');
-  } catch {
-    // Ignore write errors in read-only environments
-  }
+  writeJson(STORAGE_FILE, rsvps);
 }
 
 export async function GET() {
   const fallback = readFallbackRsvps();
   let dbRsvps: Rsvp[] = [];
+  const dbConnected = isSupabaseConfigured();
 
-  try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('rsvps')
-      .select('*')
-      .order('created_at', { ascending: false });
+  if (dbConnected) {
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('rsvps')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      dbRsvps = data as Rsvp[];
+      if (!error && data) {
+        dbRsvps = data as Rsvp[];
+      } else if (error) {
+        console.error('[RSVP GET] Supabase error:', error.message);
+      }
+    } catch (err) {
+      console.error('[RSVP GET] Supabase catch error:', err);
     }
-  } catch {
-    // Supabase DB unconfigured or unreachable
   }
 
   // Merge DB and Fallback RSVPs, removing duplicates by id or guest_email + created_at
@@ -66,7 +50,11 @@ export async function GET() {
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  return NextResponse.json({ success: true, rsvps: allRsvps });
+  return NextResponse.json({
+    success: true,
+    rsvps: allRsvps,
+    supabaseConnected: dbConnected,
+  });
 }
 
 export async function POST(request: Request) {
@@ -103,27 +91,39 @@ export async function POST(request: Request) {
     currentFallback.unshift(newRsvpRecord);
     writeFallbackRsvps(currentFallback);
 
-    // 2. Try saving to Supabase if connected
+    // 2. Try saving to Supabase DB if connected
     let savedRecord = newRsvpRecord;
-    try {
-      const supabase = createAdminClient();
-      const { data, error } = await supabase
-        .from('rsvps')
-        .insert({
-          guest_name,
-          guest_email,
-          attendance,
-          guest_count,
-          notes,
-        })
-        .select()
-        .single();
+    let savedToSupabase = false;
+    let supabaseError: string | null = null;
 
-      if (!error && data) {
-        savedRecord = data as Rsvp;
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from('rsvps')
+          .insert({
+            guest_name,
+            guest_email,
+            attendance,
+            guest_count,
+            notes,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          savedRecord = data as Rsvp;
+          savedToSupabase = true;
+        } else if (error) {
+          supabaseError = error.message;
+          console.error('[RSVP POST] Supabase insert error:', error.message);
+        }
+      } catch (dbErr) {
+        supabaseError = dbErr instanceof Error ? dbErr.message : String(dbErr);
+        console.error('[RSVP POST] Supabase catch error:', dbErr);
       }
-    } catch (dbErr) {
-      console.warn('[RSVP] Supabase insert warning (using fallback store):', dbErr);
+    } else {
+      supabaseError = 'Supabase environment variables are missing or unconfigured.';
     }
 
     // 3. Send email confirmation to guest & admin notification
@@ -136,11 +136,50 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       rsvp: savedRecord,
+      savedToSupabase,
+      supabaseError,
       emailSent: emailResult?.success ?? false,
       emailMocked: emailResult?.mocked ?? false,
     });
   } catch (err) {
     console.error('[RSVP Error]', err);
     return NextResponse.json({ error: 'Failed to submit RSVP' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const email = searchParams.get('email');
+
+    if (!id && !email) {
+      return NextResponse.json({ error: 'ID or email required' }, { status: 400 });
+    }
+
+    const current = readFallbackRsvps();
+    const filtered = current.filter(
+      (r) => (id && r.id !== id) || (email && r.guest_email.toLowerCase() !== email.toLowerCase())
+    );
+    writeFallbackRsvps(filtered);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createAdminClient();
+        if (id && !id.startsWith('rsvp-')) {
+          await supabase.from('rsvps').delete().eq('id', id);
+        }
+        if (email) {
+          await supabase.from('rsvps').delete().ilike('guest_email', email);
+        }
+      } catch (dbErr) {
+        console.error('[RSVP DELETE] Supabase error:', dbErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, rsvps: filtered });
+  } catch (err) {
+    console.error('[RSVP Delete Error]', err);
+    return NextResponse.json({ error: 'Failed to delete RSVP' }, { status: 500 });
   }
 }

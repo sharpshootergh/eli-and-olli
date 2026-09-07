@@ -70,6 +70,21 @@ export default function AdminGoalsPage() {
     if (!file) return;
 
     setUploadingImage(true);
+
+    const fallbackUpload = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const upData = await res.json();
+        if (upData.success && upData.url) {
+          setImageUrl(upData.url);
+        }
+      } catch (err) {
+        console.error('Goal image upload error:', err);
+      }
+    };
+
     try {
       const supabase = createClient();
       const filename = `goal-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
@@ -80,12 +95,10 @@ export default function AdminGoalsPage() {
         const { data: publicUrlData } = supabase.storage.from('goal-images').getPublicUrl(filename);
         setImageUrl(publicUrlData.publicUrl);
       } else {
-        const blobUrl = URL.createObjectURL(file);
-        setImageUrl(blobUrl);
+        await fallbackUpload();
       }
     } catch {
-      const blobUrl = URL.createObjectURL(file);
-      setImageUrl(blobUrl);
+      await fallbackUpload();
     } finally {
       setUploadingImage(false);
     }

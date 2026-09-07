@@ -2,32 +2,16 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { MOCK_GOALS } from '@/lib/mockData';
 import type { Goal } from '@/lib/types';
-import fs from 'fs';
-import path from 'path';
+import { readJson, writeJson } from '@/lib/storage';
 
-const GOALS_FILE = path.join('/tmp', 'wedding_goals_store.json');
+const STORAGE_FILE = 'wedding_goals_store.json';
 
 function readFallbackGoals(): Goal[] {
-  try {
-    if (fs.existsSync(GOALS_FILE)) {
-      const raw = fs.readFileSync(GOALS_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {
-    // Fallback
-  }
-  return MOCK_GOALS;
+  return readJson<Goal[]>(STORAGE_FILE, MOCK_GOALS);
 }
 
 function writeFallbackGoals(goals: Goal[]) {
-  try {
-    fs.writeFileSync(GOALS_FILE, JSON.stringify(goals, null, 2), 'utf-8');
-  } catch {
-    // Ignore write error
-  }
+  writeJson(STORAGE_FILE, goals);
 }
 
 export async function GET() {

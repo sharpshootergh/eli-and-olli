@@ -14,14 +14,10 @@ export default function AdminCategoriesPage() {
 
   async function loadCategories() {
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('sort_order', { ascending: true });
-
-      if (!error && data && data.length > 0) {
-        setCategories(data);
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories)) {
+        setCategories(data.categories);
       } else {
         setCategories(MOCK_CATEGORIES);
       }
@@ -49,21 +45,20 @@ export default function AdminCategoriesPage() {
       sort_order: newSortOrder,
     };
 
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('categories')
-        .insert({ name: newCategory.name, sort_order: newCategory.sort_order })
-        .select()
-        .single();
+    setCategories([...categories, newCategory]);
 
-      if (!error && data) {
-        setCategories([...categories, data]);
-      } else {
-        setCategories([...categories, newCategory]);
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCategory }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories)) {
+        setCategories(data.categories);
       }
     } catch {
-      setCategories([...categories, newCategory]);
+      // Local state updated
     }
 
     setNewCatName('');
@@ -81,11 +76,17 @@ export default function AdminCategoriesPage() {
     setCategories(updated);
     setEditingId(null);
 
-    try {
-      const supabase = createClient();
-      await supabase.from('categories').update({ name: editingName.trim() }).eq('id', id);
-    } catch {
-      // Handled locally
+    const target = updated.find((c) => c.id === id);
+    if (target) {
+      try {
+        await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: target }),
+        });
+      } catch {
+        // Local state updated
+      }
     }
   };
 
@@ -95,10 +96,13 @@ export default function AdminCategoriesPage() {
     setCategories(categories.filter((c) => c.id !== id));
 
     try {
-      const supabase = createClient();
-      await supabase.from('categories').delete().eq('id', id);
+      const res = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.categories)) {
+        setCategories(data.categories);
+      }
     } catch {
-      // Handled locally
+      // Local state updated
     }
   };
 
@@ -120,12 +124,13 @@ export default function AdminCategoriesPage() {
     setCategories(reordered);
 
     try {
-      const supabase = createClient();
-      for (const item of reordered) {
-        await supabase.from('categories').update({ sort_order: item.sort_order }).eq('id', item.id);
-      }
+      await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categories: reordered }),
+      });
     } catch {
-      // Handled locally
+      // Local state updated
     }
   };
 

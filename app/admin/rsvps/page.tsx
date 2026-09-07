@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Rsvp, Attendance } from '@/lib/types';
-import { Download, Plus, Trash2, X, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Download, Plus, Trash2, X, UserPlus, CheckCircle2, Database, AlertTriangle } from 'lucide-react';
 
 const LABELS: Record<Attendance, string> = {
   traditional: 'Traditional only',
@@ -25,6 +25,7 @@ export default function AdminRsvpsPage() {
   const [guestCount, setGuestCount] = useState(1);
   const [notes, setNotes] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);
 
   const loadRsvps = async () => {
     setLoading(true);
@@ -37,6 +38,9 @@ export default function AdminRsvpsPage() {
       const data = await res.json();
       if (data.success && Array.isArray(data.rsvps)) {
         apiRsvps = data.rsvps;
+      }
+      if (typeof data.supabaseConnected === 'boolean') {
+        setSupabaseConnected(data.supabaseConnected);
       }
     } catch {
       // API error
@@ -124,12 +128,20 @@ export default function AdminRsvpsPage() {
     setTimeout(() => setStatusMsg(''), 3000);
   };
 
-  const handleDelete = (id: string, email: string) => {
+  const handleDelete = async (id: string, email: string) => {
     if (!confirm(`Remove RSVP entry for ${email}?`)) return;
     const filteredList = rsvps.filter((r) => r.id !== id && r.guest_email !== email);
     setRsvps(filteredList);
     if (typeof window !== 'undefined') {
       localStorage.setItem('wedding_rsvps_client_store', JSON.stringify(filteredList));
+    }
+
+    try {
+      await fetch(`/api/rsvp?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      // Handled locally
     }
   };
 
@@ -201,6 +213,29 @@ export default function AdminRsvpsPage() {
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{statusMsg}</span>
+        </div>
+      )}
+
+      {/* Supabase Status Banner */}
+      {supabaseConnected === false && (
+        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-lg space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-amber-800">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Supabase Database is Unconfigured (Using Temporary Fallback Store)</span>
+          </div>
+          <p className="text-amber-800/90 leading-relaxed">
+            Your website is currently operating on local temporary fallback storage. When you deploy or build a new version of the app, local files get reset.
+            To make sure RSVPs and reservations are permanently stored to Supabase, add <code className="bg-amber-100 px-1 py-0.5 font-mono text-[11px]">NEXT_PUBLIC_SUPABASE_URL</code>, <code className="bg-amber-100 px-1 py-0.5 font-mono text-[11px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, and <code className="bg-amber-100 px-1 py-0.5 font-mono text-[11px]">SUPABASE_SERVICE_ROLE_KEY</code> to your environment variables (e.g., in Vercel or <code className="bg-amber-100 px-1 py-0.5 font-mono text-[11px]">.env.local</code>) and run <code className="bg-amber-100 px-1 py-0.5 font-mono text-[11px]">supabase/schema.sql</code> in the Supabase SQL Editor.
+          </p>
+        </div>
+      )}
+
+      {supabaseConnected === true && (
+        <div className="p-3 bg-emerald-50/70 border border-emerald-200 text-emerald-800 text-xs rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-2 font-medium">
+            <Database className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Supabase Cloud Database Connected & Active (RSVPs and reservations are permanently saved)</span>
+          </div>
         </div>
       )}
 

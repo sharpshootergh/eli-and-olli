@@ -17,20 +17,10 @@ export default function AdminMomentsPage() {
 
   async function load() {
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('moments_photos')
-        .select('*')
-        .order('sort_order', { ascending: true });
-
-      if (!error && data?.length) {
-        setItems(
-          data.map((row) => ({
-            ...row,
-            media_type: (row.media_type as MediaType) || 'image',
-            thumbnail_url: row.thumbnail_url ?? null,
-          }))
-        );
+      const res = await fetch('/api/moments');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.moments)) {
+        setItems(data.moments);
       } else {
         setItems(MOCK_MOMENTS);
       }
@@ -57,6 +47,20 @@ export default function AdminMomentsPage() {
     setMediaType(isVideo ? 'video' : 'image');
     setUploading(true);
 
+    const fallbackUpload = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const upData = await res.json();
+        if (upData.success && upData.url) {
+          setMediaUrl(upData.url);
+        }
+      } catch (err) {
+        console.error('Moments upload error:', err);
+      }
+    };
+
     try {
       const supabase = createClient();
       const filename = `moment-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
@@ -66,10 +70,10 @@ export default function AdminMomentsPage() {
         const { data: publicUrlData } = supabase.storage.from('moments').getPublicUrl(filename);
         setMediaUrl(publicUrlData.publicUrl);
       } else {
-        setMediaUrl(URL.createObjectURL(file));
+        await fallbackUpload();
       }
     } catch {
-      setMediaUrl(URL.createObjectURL(file));
+      await fallbackUpload();
     } finally {
       setUploading(false);
     }
@@ -80,29 +84,29 @@ export default function AdminMomentsPage() {
     if (!mediaUrl.trim()) return;
 
     const sort_order = items.length ? Math.max(...items.map((p) => p.sort_order)) + 1 : 1;
-    const payload = {
+    const payload: MomentMedia = {
+      id: `moment-${Date.now()}`,
       image_url: mediaUrl.trim(),
       media_type: mediaType,
-      thumbnail_url: null as string | null,
+      thumbnail_url: null,
       caption: caption.trim() || null,
       sort_order,
     };
 
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('moments_photos')
-        .insert(payload)
-        .select()
-        .single();
+    setItems([...items, payload]);
 
-      if (!error && data) {
-        setItems([...items, { ...data, media_type: data.media_type || mediaType }]);
-      } else {
-        setItems([...items, { ...payload, id: `moment-${Date.now()}` }]);
+    try {
+      const res = await fetch('/api/moments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moment: payload }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.moments)) {
+        setItems(data.moments);
       }
     } catch {
-      setItems([...items, { ...payload, id: `moment-${Date.now()}` }]);
+      /* local updated */
     }
 
     setMediaUrl('');
@@ -114,10 +118,13 @@ export default function AdminMomentsPage() {
     if (!confirm('Delete this item?')) return;
     setItems(items.filter((p) => p.id !== id));
     try {
-      const supabase = createClient();
-      await supabase.from('moments_photos').delete().eq('id', id);
+      const res = await fetch(`/api/moments?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.moments)) {
+        setItems(data.moments);
+      }
     } catch {
-      /* local only */
+      /* local updated */
     }
   };
 
@@ -130,14 +137,13 @@ export default function AdminMomentsPage() {
     setItems(reordered);
 
     try {
-      const supabase = createClient();
-      await Promise.all(
-        reordered.map((item) =>
-          supabase.from('moments_photos').update({ sort_order: item.sort_order }).eq('id', item.id)
-        )
-      );
+      await fetch('/api/moments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moments: reordered }),
+      });
     } catch {
-      /* local only */
+      /* local updated */
     }
   };
 

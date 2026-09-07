@@ -1,32 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { siteConfig, type WeddingEvent } from '@/lib/site-config';
-import fs from 'fs';
-import path from 'path';
+import { readJson, writeJson } from '@/lib/storage';
 
-const EVENTS_FILE = path.join('/tmp', 'wedding_events_store.json');
+const STORAGE_FILE = 'wedding_events_store.json';
 
 function readFallbackEvents(): WeddingEvent[] {
-  try {
-    if (fs.existsSync(EVENTS_FILE)) {
-      const raw = fs.readFileSync(EVENTS_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {
-    // Ignore read errors
-  }
-  return siteConfig.events;
+  return readJson<WeddingEvent[]>(STORAGE_FILE, siteConfig.events);
 }
 
 function writeFallbackEvents(events: WeddingEvent[]) {
-  try {
-    fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf-8');
-  } catch {
-    // Ignore write errors in read-only envs
-  }
+  writeJson(STORAGE_FILE, events);
 }
 
 export async function GET() {
@@ -57,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Valid events array required' }, { status: 400 });
     }
 
-    // 1. Save to persistent disk fallback store
+    // 1. Save to persistent disk store
     writeFallbackEvents(events);
 
     // 2. Try saving to Supabase DB if connected
@@ -65,7 +49,7 @@ export async function POST(request: Request) {
       const supabase = createAdminClient();
       await supabase.from('site_events').upsert(events);
     } catch {
-      // Handled via fallback store
+      // Handled via persistent fallback store
     }
 
     return NextResponse.json({ success: true, events });

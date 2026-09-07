@@ -18,22 +18,12 @@ export default function MomentsSection() {
   useEffect(() => {
     async function load() {
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('moments_photos')
-          .select('*')
-          .order('sort_order', { ascending: true });
-
-        if (error || !data?.length) {
-          setItems(MOCK_MOMENTS);
+        const res = await fetch('/api/moments');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.moments) && data.moments.length > 0) {
+          setItems(data.moments);
         } else {
-          setItems(
-            data.map((row) => ({
-              ...row,
-              media_type: row.media_type || 'image',
-              thumbnail_url: row.thumbnail_url ?? null,
-            }))
-          );
+          setItems(MOCK_MOMENTS);
         }
       } catch {
         setItems(MOCK_MOMENTS);
@@ -41,7 +31,7 @@ export default function MomentsSection() {
         setLoading(false);
       }
     }
-    load();
+    void load();
   }, []);
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
