@@ -29,58 +29,20 @@ export default function AdminRsvpsPage() {
 
   const loadRsvps = async () => {
     setLoading(true);
-    let apiRsvps: Rsvp[] = [];
-    let localRsvps: Rsvp[] = [];
-
-    // 1. Fetch from server API
     try {
       const res = await fetch('/api/rsvp');
       const data = await res.json();
       if (data.success && Array.isArray(data.rsvps)) {
-        apiRsvps = data.rsvps;
+        setRsvps(data.rsvps);
       }
       if (typeof data.supabaseConnected === 'boolean') {
         setSupabaseConnected(data.supabaseConnected);
       }
     } catch {
       // API error
+    } finally {
+      setLoading(false);
     }
-
-    // 2. Load from client storage fallback
-    if (typeof window !== 'undefined') {
-      try {
-        localRsvps = JSON.parse(localStorage.getItem('wedding_rsvps_client_store') || '[]');
-      } catch {
-        localRsvps = [];
-      }
-    }
-
-    // 3. Load from Supabase DB directly if connected
-    let dbRsvps: Rsvp[] = [];
-    try {
-      const supabase = createClient();
-      const { data: dbData } = await supabase
-        .from('rsvps')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (dbData) dbRsvps = dbData;
-    } catch {
-      // Supabase unconfigured
-    }
-
-    // Deduplicate by guest_email
-    const mergedMap = new Map<string, Rsvp>();
-    [...localRsvps, ...apiRsvps, ...dbRsvps].forEach((r) => {
-      const key = r.guest_email?.toLowerCase() || r.id;
-      mergedMap.set(key, r);
-    });
-
-    const all = Array.from(mergedMap.values()).sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    setRsvps(all);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -91,35 +53,32 @@ export default function AdminRsvpsPage() {
     e.preventDefault();
     if (!guestName.trim() || !guestEmail.trim()) return;
 
-    const newRecord: Rsvp = {
-      id: `rsvp-${Date.now()}`,
+    const newRecord = {
       guest_name: guestName.trim(),
       guest_email: guestEmail.trim().toLowerCase(),
       attendance,
       guest_count: guestCount,
       notes: notes.trim() || null,
-      created_at: new Date().toISOString(),
     };
 
-    // Save locally
-    const updated = [newRecord, ...rsvps];
-    setRsvps(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('wedding_rsvps_client_store', JSON.stringify(updated));
-    }
-
-    // Submit to API
+    // Submit to API / Supabase
     try {
-      await fetch('/api/rsvp', {
+      const res = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord),
       });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg('RSVP added successfully to Supabase!');
+        await loadRsvps();
+      } else {
+        alert(data.error || 'Failed to add RSVP to Supabase');
+      }
     } catch {
-      // Handled via local state
+      alert('Network error submitting RSVP');
     }
 
-    setStatusMsg('RSVP added successfully!');
     setGuestName('');
     setGuestEmail('');
     setGuestCount(1);
@@ -130,18 +89,21 @@ export default function AdminRsvpsPage() {
 
   const handleDelete = async (id: string, email: string) => {
     if (!confirm(`Remove RSVP entry for ${email}?`)) return;
-    const filteredList = rsvps.filter((r) => r.id !== id && r.guest_email !== email);
-    setRsvps(filteredList);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('wedding_rsvps_client_store', JSON.stringify(filteredList));
-    }
 
     try {
-      await fetch(`/api/rsvp?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`, {
+      const res = await fetch(`/api/rsvp?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`, {
         method: 'DELETE',
       });
+      const data = await res.json();
+      if (data.success) {
+        if (Array.isArray(data.rsvps)) {
+          setRsvps(data.rsvps);
+        } else {
+          await loadRsvps();
+        }
+      }
     } catch {
-      // Handled locally
+      // API error
     }
   };
 

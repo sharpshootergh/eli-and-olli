@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SiteMedia } from '@/lib/types';
-import { readJson, writeJson } from '@/lib/storage';
-
-const STORAGE_FILE = 'wedding_media_store.json';
 
 export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
@@ -164,45 +161,6 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   },
 ];
 
-function readFallbackMedia(): SiteMedia[] {
-  return readJson<SiteMedia[]>(STORAGE_FILE, DEFAULT_SITE_MEDIA);
-}
-
-function writeFallbackMedia(items: SiteMedia[]) {
-  writeJson(STORAGE_FILE, items);
-}
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const section = searchParams.get('section');
-
-  const fallback = readFallbackMedia();
-  let dbItems: SiteMedia[] = [];
-
-  try {
-    const supabase = createAdminClient();
-    let query = supabase.from('site_media').select('*').order('sort_order', { ascending: true });
-    if (section) {
-      query = query.eq('section', section);
-    }
-    const { data, error } = await query;
-    if (!error && data && data.length > 0) {
-      dbItems = data as SiteMedia[];
-    }
-  } catch {
-    // DB unconfigured
-  }
-
-  // Use fallback if DB is empty or unconfigured
-  const source = dbItems.length > 0 ? dbItems : fallback;
-
-  const items = source
-    .filter((item) => !section || item.section === section)
-    .sort((a, b) => a.sort_order - b.sort_order);
-
-  return NextResponse.json({ success: true, items });
-}
-
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sanitizeUUID(id?: string | null): string {
@@ -212,61 +170,70 @@ function sanitizeUUID(id?: string | null): string {
   return `10000000-0000-4000-a000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
 }
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const section = searchParams.get('section');
+
+  const supabase = createAdminClient();
+  let query = supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+  if (section) {
+    query = query.eq('section', section);
+  }
+
+  let { data, error } = await query;
+
+  // Auto-seed Supabase database if empty
+  if (!error && data && data.length === 0) {
+    try {
+      const seedItems = section
+        ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
+        : DEFAULT_SITE_MEDIA;
+      await supabase.from('site_media').upsert(seedItems);
+      const reQuery = await query;
+      data = reQuery.data || seedItems;
+    } catch {
+      data = DEFAULT_SITE_MEDIA.filter((item) => !section || item.section === section);
+    }
+  }
+
+  const items = (data as SiteMedia[]) || DEFAULT_SITE_MEDIA.filter((item) => !section || item.section === section);
+
+  return NextResponse.json({ success: true, items });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { item, items } = body;
+    const supabase = createAdminClient();
 
-    let current = readFallbackMedia();
-
-    if (Array.isArray(items)) {
-      current = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
-    } else if (item) {
-      const sanitizedItem = { ...item, id: sanitizeUUID(item.id) };
-      const idx = current.findIndex((i) => i.id === sanitizedItem.id);
-      if (idx >= 0) {
-        current[idx] = { ...current[idx], ...sanitizedItem };
-      } else {
-        current.push({
-          ...sanitizedItem,
-          sort_order: sanitizedItem.sort_order || current.length + 1,
-        });
+    if (item) {
+      const itemToUpsert = { ...item, id: sanitizeUUID(item.id) };
+      const { error } = await supabase.from('site_media').upsert(itemToUpsert);
+      if (error) {
+        console.error('[Supabase content upsert error]', error);
+        if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+          const { mobile_media_url, mobile_object_position, ...dbItem } = itemToUpsert;
+          await supabase.from('site_media').upsert(dbItem);
+        }
+      }
+    } else if (Array.isArray(items)) {
+      const itemsToUpsert = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
+      const { error } = await supabase.from('site_media').upsert(itemsToUpsert);
+      if (error) {
+        console.error('[Supabase content upsert items error]', error);
+        if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+          const dbItems = itemsToUpsert.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
+          await supabase.from('site_media').upsert(dbItems);
+        }
       }
     }
 
-    writeFallbackMedia(current);
-
-    try {
-      const supabase = createAdminClient();
-      if (item) {
-        const itemToUpsert = { ...item, id: sanitizeUUID(item.id) };
-        const { error } = await supabase.from('site_media').upsert(itemToUpsert);
-        if (error) {
-          console.error('[Supabase content upsert error]', error);
-          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-            const { mobile_media_url, mobile_object_position, ...dbItem } = itemToUpsert;
-            await supabase.from('site_media').upsert(dbItem);
-          }
-        }
-      } else if (Array.isArray(items)) {
-        const itemsToUpsert = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
-        const { error } = await supabase.from('site_media').upsert(itemsToUpsert);
-        if (error) {
-          console.error('[Supabase content upsert items error]', error);
-          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-            const dbItems = itemsToUpsert.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
-            await supabase.from('site_media').upsert(dbItems);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('[Supabase content catch error]', err);
-    }
-
-    return NextResponse.json({ success: true, items: current });
+    const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, items: data || [] });
   } catch (err) {
     console.error('[Content API Error]', err);
-    return NextResponse.json({ error: 'Failed to save site media' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save site media to Supabase' }, { status: 500 });
   }
 }
 
@@ -279,26 +246,15 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
     }
 
-    let current = readFallbackMedia();
-    const itemToDelete = current.find((item) => item.id === id);
-    const filtered = current.filter((item) => item.id !== id);
-    writeFallbackMedia(filtered);
-
-    try {
-      const supabase = createAdminClient();
-      if (UUID_REGEX.test(id)) {
-        await supabase.from('site_media').delete().eq('id', id);
-      }
-      if (itemToDelete?.media_url) {
-        await supabase.from('site_media').delete().eq('media_url', itemToDelete.media_url);
-      }
-    } catch {
-      // Supabase unconfigured
+    const supabase = createAdminClient();
+    if (UUID_REGEX.test(id)) {
+      await supabase.from('site_media').delete().eq('id', id);
     }
 
-    return NextResponse.json({ success: true, items: filtered });
+    const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, items: data || [] });
   } catch (err) {
     console.error('[Content Delete Error]', err);
-    return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete media from Supabase' }, { status: 500 });
   }
 }

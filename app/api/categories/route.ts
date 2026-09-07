@@ -2,22 +2,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { MOCK_CATEGORIES } from '@/lib/mockData';
 import type { Category } from '@/lib/types';
-import { readJson, writeJson } from '@/lib/storage';
-
-const STORAGE_FILE = 'wedding_categories_store.json';
-
-function readFallbackCategories(): Category[] {
-  return readJson<Category[]>(STORAGE_FILE, MOCK_CATEGORIES);
-}
-
-function writeFallbackCategories(categories: Category[]) {
-  writeJson(STORAGE_FILE, categories);
-}
 
 export async function GET() {
-  const fallback = readFallbackCategories();
-  let dbItems: Category[] = [];
-
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -26,52 +12,52 @@ export async function GET() {
       .order('sort_order', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      dbItems = data as Category[];
+      return NextResponse.json({ success: true, categories: data });
     }
-  } catch {
-    // DB unconfigured
+  } catch (err) {
+    console.error('[Categories GET Error]', err);
   }
 
-  const items = dbItems.length > 0 ? dbItems : fallback;
-  return NextResponse.json({ success: true, categories: items });
+  return NextResponse.json({ success: true, categories: MOCK_CATEGORIES });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { category, categories } = body;
+    const supabase = createAdminClient();
 
-    let current = readFallbackCategories();
+    const sanitizeCategory = (c: Partial<Category>) => {
+      const { id, name, sort_order } = c;
+      const validId = id && !id.startsWith('cat-') ? id : undefined;
+      return {
+        ...(validId ? { id: validId } : {}),
+        name: name || 'Category',
+        sort_order: sort_order || 1,
+      };
+    };
 
-    if (Array.isArray(categories)) {
-      current = categories;
-    } else if (category) {
-      const idx = current.findIndex((c) => c.id === category.id);
-      if (idx >= 0) {
-        current[idx] = { ...current[idx], ...category };
-      } else {
-        const generatedId = category.id || `cat-${Date.now()}`;
-        current.push({ ...category, id: generatedId });
+    if (category) {
+      const payload = sanitizeCategory(category);
+      const { error } = await supabase.from('categories').upsert(payload);
+      if (error) {
+        console.error('[Categories POST error]', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    } else if (Array.isArray(categories)) {
+      const payload = categories.map(sanitizeCategory);
+      const { error } = await supabase.from('categories').upsert(payload);
+      if (error) {
+        console.error('[Categories POST items error]', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
 
-    writeFallbackCategories(current);
-
-    try {
-      const supabase = createAdminClient();
-      if (category) {
-        await supabase.from('categories').upsert(category);
-      } else if (Array.isArray(categories)) {
-        await supabase.from('categories').upsert(categories);
-      }
-    } catch {
-      // Supabase unconfigured
-    }
-
-    return NextResponse.json({ success: true, categories: current });
+    const { data } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, categories: data || [] });
   } catch (err) {
     console.error('[Categories API Error]', err);
-    return NextResponse.json({ error: 'Failed to update categories' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update categories in Supabase' }, { status: 500 });
   }
 }
 
@@ -84,20 +70,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const current = readFallbackCategories();
-    const filtered = current.filter((c) => c.id !== id);
-    writeFallbackCategories(filtered);
-
-    try {
-      const supabase = createAdminClient();
-      await supabase.from('categories').delete().eq('id', id);
-    } catch {
-      // Supabase unconfigured
+    const supabase = createAdminClient();
+    if (!id.startsWith('cat-')) {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (error) {
+        console.error('[Categories DELETE error]', error);
+      }
     }
 
-    return NextResponse.json({ success: true, categories: filtered });
+    const { data } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, categories: data || [] });
   } catch (err) {
     console.error('[Categories Delete Error]', err);
-    return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete category from Supabase' }, { status: 500 });
   }
 }

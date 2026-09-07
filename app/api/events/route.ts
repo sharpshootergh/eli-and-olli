@@ -1,20 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { siteConfig, type WeddingEvent } from '@/lib/site-config';
-import { readJson, writeJson } from '@/lib/storage';
-
-const STORAGE_FILE = 'wedding_events_store.json';
-
-function readFallbackEvents(): WeddingEvent[] {
-  return readJson<WeddingEvent[]>(STORAGE_FILE, siteConfig.events);
-}
-
-function writeFallbackEvents(events: WeddingEvent[]) {
-  writeJson(STORAGE_FILE, events);
-}
 
 export async function GET() {
-  const fallback = readFallbackEvents();
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -25,11 +13,20 @@ export async function GET() {
     if (!error && data && data.length > 0) {
       return NextResponse.json({ success: true, events: data });
     }
-  } catch {
-    // DB unconfigured
+
+    // Auto-seed initial siteConfig.events into Supabase if empty
+    if (!error && data && data.length === 0) {
+      await supabase.from('site_events').upsert(siteConfig.events);
+      const reQuery = await supabase.from('site_events').select('*').order('sort_order', { ascending: true });
+      if (reQuery.data && reQuery.data.length > 0) {
+        return NextResponse.json({ success: true, events: reQuery.data });
+      }
+    }
+  } catch (err) {
+    console.error('[Events GET Error]', err);
   }
 
-  return NextResponse.json({ success: true, events: fallback });
+  return NextResponse.json({ success: true, events: siteConfig.events });
 }
 
 export async function POST(request: Request) {
@@ -41,20 +38,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Valid events array required' }, { status: 400 });
     }
 
-    // 1. Save to persistent disk store
-    writeFallbackEvents(events);
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('site_events').upsert(events);
 
-    // 2. Try saving to Supabase DB if connected
-    try {
-      const supabase = createAdminClient();
-      await supabase.from('site_events').upsert(events);
-    } catch {
-      // Handled via persistent fallback store
+    if (error) {
+      console.error('[Events POST Supabase error]', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, events });
+    const { data } = await supabase.from('site_events').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, events: data || events });
   } catch (err) {
     console.error('[Events API Error]', err);
-    return NextResponse.json({ error: 'Failed to update events' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update events in Supabase' }, { status: 500 });
   }
 }

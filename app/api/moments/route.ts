@@ -2,22 +2,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { MOCK_MOMENTS } from '@/lib/mockData';
 import type { MomentMedia } from '@/lib/types';
-import { readJson, writeJson } from '@/lib/storage';
-
-const STORAGE_FILE = 'wedding_moments_store.json';
-
-function readFallbackMoments(): MomentMedia[] {
-  return readJson<MomentMedia[]>(STORAGE_FILE, MOCK_MOMENTS);
-}
-
-function writeFallbackMoments(moments: MomentMedia[]) {
-  writeJson(STORAGE_FILE, moments);
-}
 
 export async function GET() {
-  const fallback = readFallbackMoments();
-  let dbItems: MomentMedia[] = [];
-
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -26,56 +12,60 @@ export async function GET() {
       .order('sort_order', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      dbItems = data.map((row) => ({
+      const items = data.map((row) => ({
         ...row,
         media_type: row.media_type || 'image',
         thumbnail_url: row.thumbnail_url ?? null,
       }));
+      return NextResponse.json({ success: true, moments: items });
     }
-  } catch {
-    // DB unconfigured
+  } catch (err) {
+    console.error('[Moments GET Error]', err);
   }
 
-  const items = dbItems.length > 0 ? dbItems : fallback;
-  return NextResponse.json({ success: true, moments: items });
+  return NextResponse.json({ success: true, moments: MOCK_MOMENTS });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { moment, moments } = body;
+    const supabase = createAdminClient();
 
-    let current = readFallbackMoments();
+    const sanitizeMoment = (m: Partial<MomentMedia>) => {
+      const { id, image_url, media_type, thumbnail_url, caption, sort_order } = m;
+      const validId = id && !id.startsWith('moment-') ? id : undefined;
+      return {
+        ...(validId ? { id: validId } : {}),
+        image_url,
+        media_type: media_type || 'image',
+        thumbnail_url: thumbnail_url ?? null,
+        caption: caption ?? null,
+        sort_order: sort_order || 1,
+      };
+    };
 
-    if (Array.isArray(moments)) {
-      current = moments;
-    } else if (moment) {
-      const idx = current.findIndex((m) => m.id === moment.id);
-      if (idx >= 0) {
-        current[idx] = { ...current[idx], ...moment };
-      } else {
-        const generatedId = moment.id || `moment-${Date.now()}`;
-        current.push({ ...moment, id: generatedId });
+    if (moment) {
+      const payload = sanitizeMoment(moment);
+      const { error } = await supabase.from('moments_photos').upsert(payload);
+      if (error) {
+        console.error('[Moments POST error]', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    } else if (Array.isArray(moments)) {
+      const payload = moments.map(sanitizeMoment);
+      const { error } = await supabase.from('moments_photos').upsert(payload);
+      if (error) {
+        console.error('[Moments POST items error]', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
 
-    writeFallbackMoments(current);
-
-    try {
-      const supabase = createAdminClient();
-      if (moment) {
-        await supabase.from('moments_photos').upsert(moment);
-      } else if (Array.isArray(moments)) {
-        await supabase.from('moments_photos').upsert(moments);
-      }
-    } catch {
-      // Supabase unconfigured
-    }
-
-    return NextResponse.json({ success: true, moments: current });
+    const { data } = await supabase.from('moments_photos').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, moments: data || [] });
   } catch (err) {
     console.error('[Moments API Error]', err);
-    return NextResponse.json({ error: 'Failed to update moments' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update moments in Supabase' }, { status: 500 });
   }
 }
 
@@ -88,20 +78,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const current = readFallbackMoments();
-    const filtered = current.filter((m) => m.id !== id);
-    writeFallbackMoments(filtered);
-
-    try {
-      const supabase = createAdminClient();
-      await supabase.from('moments_photos').delete().eq('id', id);
-    } catch {
-      // Supabase unconfigured
+    const supabase = createAdminClient();
+    if (!id.startsWith('moment-')) {
+      const { error } = await supabase.from('moments_photos').delete().eq('id', id);
+      if (error) {
+        console.error('[Moments DELETE error]', error);
+      }
     }
 
-    return NextResponse.json({ success: true, moments: filtered });
+    const { data } = await supabase.from('moments_photos').select('*').order('sort_order', { ascending: true });
+    return NextResponse.json({ success: true, moments: data || [] });
   } catch (err) {
     console.error('[Moments Delete Error]', err);
-    return NextResponse.json({ error: 'Failed to delete moment' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete moment from Supabase' }, { status: 500 });
   }
 }
