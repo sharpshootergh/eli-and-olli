@@ -45,8 +45,8 @@ export default function StorySection() {
         mobilePosition: item.mobile_object_position || item.object_position || 'left',
       }))
     : [
-        { src: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg', mobileSrc: null, position: 'left', mobilePosition: 'left' },
-        { src: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg', mobileSrc: null, position: 'left', mobilePosition: 'left' },
+        { src: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.webp', mobileSrc: null, position: 'left', mobilePosition: 'left' },
+        { src: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.webp', mobileSrc: null, position: 'left', mobilePosition: 'left' },
       ];
   const isYoutube = storyVideo ? storyVideo.video_provider === 'youtube' : story.videoType === 'youtube';
   const videoUrl = storyVideo?.media_url ?? (isYoutube ? story.youtubeUrl : story.mp4Url);

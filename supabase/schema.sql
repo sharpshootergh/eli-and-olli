@@ -359,7 +359,7 @@ where not exists (
 
 insert into public.events (name, event_date, event_time, location, sort_order)
 select * from (values
-  ('Traditional Wedding'::text, '2026-12-12'::date, null::time, 'Abidjan, Ivory Coast'::text, 1),
+  ('Traditional Wedding'::text, '2026-12-12'::date, '12:00'::time, 'Abidjan, Ivory Coast'::text, 1),
   ('White Wedding'::text, '2026-12-19'::date, '12:00'::time, 'Cape Coast, Ghana'::text, 2)
 ) as v(name, event_date, event_time, location, sort_order)
 where not exists (select 1 from public.events limit 1);

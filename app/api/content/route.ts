@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import type { SiteMedia } from '@/lib/types';
 
 export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000001',
     section: 'hero',
-    media_url: '/hero/TBC5-72377c25-44f5-4487-90a6-32e6285327f6.jpg',
+    media_url: '/hero/TBC5-72377c25-44f5-4487-90a6-32e6285327f6.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -18,7 +18,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000002',
     section: 'hero',
-    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
+    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -30,7 +30,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000003',
     section: 'hero',
-    media_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.jpg',
+    media_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -42,7 +42,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000004',
     section: 'hero',
-    media_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.jpg',
+    media_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -54,7 +54,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000005',
     section: 'hero',
-    media_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.jpg',
+    media_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -66,7 +66,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000006',
     section: 'hero',
-    media_url: '/hero/TBC-90ef3dd1-4489-43a6-82e5-0b53e9280206.jpg',
+    media_url: '/hero/TBC-90ef3dd1-4489-43a6-82e5-0b53e9280206.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -78,7 +78,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000007',
     section: 'hero',
-    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
+    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -90,7 +90,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000008',
     section: 'hero',
-    media_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.jpg',
+    media_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -102,7 +102,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000009',
     section: 'hero',
-    media_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.jpg',
+    media_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -114,7 +114,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000010',
     section: 'hero',
-    media_url: '/hero/TBC17-9734aa80-3a09-4d7e-98d1-3059177cdaa4.jpg',
+    media_url: '/hero/TBC17-9734aa80-3a09-4d7e-98d1-3059177cdaa4.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -126,7 +126,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '10000000-0000-4000-a000-000000000011',
     section: 'hero',
-    media_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.jpg',
+    media_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -138,7 +138,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '20000000-0000-4000-a000-000000000001',
     section: 'story',
-    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
+    media_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -150,7 +150,7 @@ export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
   {
     id: '20000000-0000-4000-a000-000000000002',
     section: 'story',
-    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
+    media_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.webp',
     mobile_media_url: null,
     media_type: 'image',
     video_provider: 'file',
@@ -174,30 +174,36 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const section = searchParams.get('section');
 
-  const supabase = createAdminClient();
-  let query = supabase.from('site_media').select('*').order('sort_order', { ascending: true });
-  if (section) {
-    query = query.eq('section', section);
-  }
-
-  let { data, error } = await query;
-
-  // Auto-seed Supabase database if empty
-  if (!error && data && data.length === 0) {
+  if (isSupabaseConfigured()) {
     try {
-      const seedItems = section
-        ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
-        : DEFAULT_SITE_MEDIA;
-      await supabase.from('site_media').upsert(seedItems);
-      const reQuery = await query;
-      data = reQuery.data || seedItems;
-    } catch {
-      data = DEFAULT_SITE_MEDIA.filter((item) => !section || item.section === section);
+      const supabase = createAdminClient();
+      let query = supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+      if (section) {
+        query = query.eq('section', section);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data && data.length > 0) {
+        return NextResponse.json({ success: true, items: data });
+      }
+
+      if (!error && data && data.length === 0) {
+        const seedItems = section
+          ? DEFAULT_SITE_MEDIA.filter((item) => item.section === section)
+          : DEFAULT_SITE_MEDIA;
+        await supabase.from('site_media').upsert(seedItems);
+        const reQuery = await query;
+        if (reQuery.data && reQuery.data.length > 0) {
+          return NextResponse.json({ success: true, items: reQuery.data });
+        }
+      }
+    } catch (err) {
+      console.error('[Content GET Error]', err);
     }
   }
 
-  const items = (data as SiteMedia[]) || DEFAULT_SITE_MEDIA.filter((item) => !section || item.section === section);
-
+  const items = DEFAULT_SITE_MEDIA.filter((item) => !section || item.section === section);
   return NextResponse.json({ success: true, items });
 }
 

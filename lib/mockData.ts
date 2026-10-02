@@ -78,7 +78,7 @@ export const MOCK_GOALS: Goal[] = [
 export const MOCK_MOMENTS: MomentMedia[] = [
   {
     id: 'moment-1',
-    image_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.jpg',
+    image_url: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Elisha & Olivia — Our Journey',
@@ -86,7 +86,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-2',
-    image_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.jpg',
+    image_url: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Quiet moments together',
@@ -94,7 +94,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-3',
-    image_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.jpg',
+    image_url: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Joy and laughter',
@@ -102,7 +102,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-4',
-    image_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.jpg',
+    image_url: '/hero/TBC235-3bba5f4b-b5a2-4db4-bf7a-19d3e72233d4.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Walking side by side',
@@ -110,7 +110,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-5',
-    image_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.jpg',
+    image_url: '/hero/TBC244-423318dc-84da-459a-beab-47e134803a4d.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Celebrating our love',
@@ -118,7 +118,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-6',
-    image_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.jpg',
+    image_url: '/hero/TBC267-95769264-776e-42ff-8a97-d3d8e19b498f.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Forever begins now',
@@ -126,7 +126,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-7',
-    image_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.jpg',
+    image_url: '/hero/TBC77-1e1ed5ff-242f-42b1-82ab-3a5b0b0560b1.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Traditional elegance',
@@ -134,7 +134,7 @@ export const MOCK_MOMENTS: MomentMedia[] = [
   },
   {
     id: 'moment-8',
-    image_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.jpg',
+    image_url: '/hero/TBC84-49a49f9e-d683-41a7-97f8-a0905f77cd1f.webp',
     media_type: 'image',
     thumbnail_url: null,
     caption: 'Two hearts, one story',

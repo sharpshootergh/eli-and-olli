@@ -59,7 +59,7 @@ export const siteConfig = {
       id: 'event-traditional',
       name: 'Traditional Wedding',
       eventDate: '2026-12-12',
-      eventTime: null,
+      eventTime: '12:00',
       location: 'Abidjan, Ivory Coast',
       venueName: 'Traditional Venue',
       gpsUrl: 'https://maps.google.com/?q=Abidjan+Ivory+Coast',

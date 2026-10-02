@@ -1,25 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { siteConfig, type WeddingEvent } from '@/lib/site-config';
 
 export async function GET() {
   try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('site_events')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('site_events')
+        .select('*')
+        .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json({ success: true, events: data });
-    }
+      if (!error && data && data.length > 0) {
+        return NextResponse.json({ success: true, events: data });
+      }
 
-    // Auto-seed initial siteConfig.events into Supabase if empty
-    if (!error && data && data.length === 0) {
-      await supabase.from('site_events').upsert(siteConfig.events);
-      const reQuery = await supabase.from('site_events').select('*').order('sort_order', { ascending: true });
-      if (reQuery.data && reQuery.data.length > 0) {
-        return NextResponse.json({ success: true, events: reQuery.data });
+      // Auto-seed initial siteConfig.events into Supabase if empty
+      if (!error && data && data.length === 0) {
+        await supabase.from('site_events').upsert(siteConfig.events);
+        const reQuery = await supabase.from('site_events').select('*').order('sort_order', { ascending: true });
+        if (reQuery.data && reQuery.data.length > 0) {
+          return NextResponse.json({ success: true, events: reQuery.data });
+        }
       }
     }
   } catch (err) {

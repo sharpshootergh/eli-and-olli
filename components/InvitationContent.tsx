@@ -6,8 +6,9 @@ import { siteConfig, formatEventDate, formatEventTime } from '@/lib/site-config'
 
 const invitationCopy = {
   en: {
-    withFamilies: 'Together with their families',
-    requestPresence: 'request the honour of your presence',
+    withFamilies: 'The Sagoe and Tokpa Families',
+    andConnector: 'And',
+    requestPresence: 'request the honor of your presence',
     celebrations: 'at their wedding celebrations',
     respond: 'Kindly respond at your earliest convenience',
     rsvpNote:
@@ -18,8 +19,9 @@ const invitationCopy = {
     twoCelebrations: 'Two celebrations · One love',
   },
   fr: {
-    withFamilies: 'Avec leurs familles',
-    requestPresence: 'sollicitent l’honneur de votre présence',
+    withFamilies: 'Les familles Sagoe et Tokpa',
+    andConnector: 'Et',
+    requestPresence: "sollicitent l'honneur de votre présence",
     celebrations: 'à leurs célébrations de mariage',
     respond: 'Merci de répondre dès que possible',
     rsvpNote:
@@ -109,10 +111,9 @@ export default function InvitationContent({ printLanguage }: { printLanguage?: '
                 {couple.partnerTwo.fullName}
               </span>
               <span
-                className="block my-3 font-serif text-3xl sm:text-4xl text-[#b98b2e] font-light italic"
-                aria-hidden
+                className="block my-3 font-serif text-2xl sm:text-3xl text-[#b98b2e] font-light italic uppercase tracking-wider"
               >
-                &
+                {text.andConnector}
               </span>
               <span className="block text-4xl sm:text-6xl tracking-tight">
                 {couple.partnerOne.fullName}
