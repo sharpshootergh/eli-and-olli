@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/LanguageProvider';
-import { siteConfig, formatEventDate, formatEventTime } from '@/lib/site-config';
+import { siteConfig, formatEventDate, formatEventTime, type WeddingEvent } from '@/lib/site-config';
 
 const invitationCopy = {
   en: {
@@ -44,11 +45,27 @@ function eventLabel(eventId: string, language: 'en' | 'fr', fallback: string) {
 }
 
 export default function InvitationContent({ printLanguage }: { printLanguage?: 'en' | 'fr' }) {
-  const { events, siteUrl, couple } = siteConfig;
+  const { siteUrl, couple } = siteConfig;
   const { language, setLanguage } = useLanguage();
+  const [events, setEvents] = useState<WeddingEvent[]>(siteConfig.events);
   const activeLanguage = printLanguage ?? language;
   const text = invitationCopy[activeLanguage];
   const rsvpUrl = `${siteUrl.replace(/\/$/, '')}/#rsvp`;
+
+  useEffect(() => {
+    async function loadLiveEvents() {
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.events) && data.events.length > 0) {
+          setEvents(data.events);
+        }
+      } catch {
+        // Fallback to siteConfig.events
+      }
+    }
+    void loadLiveEvents();
+  }, []);
 
   return (
     <div className="invite-page relative min-h-screen flex flex-col items-center justify-center px-3 py-7 sm:px-6 sm:py-12 print:py-0 overflow-hidden">

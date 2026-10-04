@@ -2,6 +2,20 @@
 
 All notable changes to the Eli & Olivia Wedding Website project are documented in this file.
 
+## [1.2.0] - 2026-10-04
+
+### Added
+- **API Endpoint `/api/admin/contributions`**: Created server-side API route utilizing `createAdminClient` service role to securely query contributions from Supabase for the admin panel.
+
+### Changed
+- **Admin Panel Data Persistence**:
+  - Updated `/api/goals` to sanitize mock IDs (`goal-*`) preventing Postgres UUID syntax errors on upsert and delete operations.
+  - Updated `/api/goals`, `/api/categories`, and `/api/moments` GET handlers to respect empty database queries when Supabase is configured instead of force-reverting to mock data.
+  - Updated `AdminContributionsPage` (`/admin/contributions`) to fetch live ledger data via `/api/admin/contributions` and `/api/goals`.
+- **Live Web App Integration**:
+  - Updated `InvitationContent` (`/invitation` page) to fetch live event updates from `/api/events`, ensuring venue edits, dates, times, and GPS links persist and display on the digital invitation.
+  - Updated default story section image positioning in `DEFAULT_SITE_MEDIA` for clean framing across mobile and desktop displays.
+
 ## [1.1.0] - 2026-10-02
 
 ### Added

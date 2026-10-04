@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { MOCK_GOALS } from '@/lib/mockData';
+import type { Goal } from '@/lib/types';
 
 export async function GET() {
   try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('goals')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json({ success: true, goals: data });
+      if (!error && data) {
+        return NextResponse.json({ success: true, goals: data });
+      }
     }
   } catch (err) {
     console.error('[Goals GET Error]', err);
@@ -26,14 +29,33 @@ export async function POST(request: Request) {
     const { goal, goals } = body;
     const supabase = createAdminClient();
 
+    const sanitizeGoal = (g: Partial<Goal>) => {
+      const { id, category_id, title, description, image_url, type, target_amount, amount_raised, contributor_count, sort_order } = g;
+      const validId = id && !id.startsWith('goal-') ? id : undefined;
+      return {
+        ...(validId ? { id: validId } : {}),
+        category_id,
+        title: title || 'Registry Item',
+        description: description ?? null,
+        image_url: image_url ?? null,
+        type: type || 'open',
+        target_amount: target_amount ?? null,
+        amount_raised: amount_raised || 0,
+        contributor_count: contributor_count || 0,
+        sort_order: sort_order || 1,
+      };
+    };
+
     if (goal) {
-      const { error } = await supabase.from('goals').upsert(goal);
+      const payload = sanitizeGoal(goal);
+      const { error } = await supabase.from('goals').upsert(payload);
       if (error) {
         console.error('[Goals POST error]', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
     } else if (Array.isArray(goals)) {
-      const { error } = await supabase.from('goals').upsert(goals);
+      const payload = goals.map(sanitizeGoal);
+      const { error } = await supabase.from('goals').upsert(payload);
       if (error) {
         console.error('[Goals POST items error]', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -58,10 +80,11 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from('goals').delete().eq('id', id);
-
-    if (error) {
-      console.error('[Goals DELETE error]', error);
+    if (!id.startsWith('goal-')) {
+      const { error } = await supabase.from('goals').delete().eq('id', id);
+      if (error) {
+        console.error('[Goals DELETE error]', error);
+      }
     }
 
     const { data } = await supabase.from('goals').select('*').order('sort_order', { ascending: true });

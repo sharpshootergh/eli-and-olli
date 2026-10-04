@@ -17,25 +17,33 @@ export default function AdminContributionsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const supabase = createClient();
-        const { data: goalsData } = await supabase.from('goals').select('*');
-        const { data: contribsData } = await supabase
-          .from('contributions')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const [goalsRes, contribsRes] = await Promise.all([
+          fetch('/api/goals'),
+          fetch('/api/admin/contributions'),
+        ]);
+        const [goalsData, contribsData] = await Promise.all([
+          goalsRes.json(),
+          contribsRes.json(),
+        ]);
 
-        if (goalsData && goalsData.length > 0) setGoals(goalsData);
-        else setGoals(MOCK_GOALS);
+        if (goalsData.success && Array.isArray(goalsData.goals)) {
+          setGoals(goalsData.goals);
+        } else {
+          setGoals(MOCK_GOALS);
+        }
 
-        if (contribsData && contribsData.length > 0) setContributions(contribsData);
-        else setContributions(MOCK_CONTRIBUTIONS);
+        if (contribsData.success && Array.isArray(contribsData.contributions)) {
+          setContributions(contribsData.contributions);
+        } else {
+          setContributions(MOCK_CONTRIBUTIONS);
+        }
       } catch {
         setGoals(MOCK_GOALS);
         setContributions(MOCK_CONTRIBUTIONS);
       }
     }
 
-    loadData();
+    void loadData();
   }, []);
 
   // Filter & Sort Logic

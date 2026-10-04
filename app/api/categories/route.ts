@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { MOCK_CATEGORIES } from '@/lib/mockData';
 import type { Category } from '@/lib/types';
 
 export async function GET() {
   try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json({ success: true, categories: data });
+      if (!error && data) {
+        return NextResponse.json({ success: true, categories: data });
+      }
     }
   } catch (err) {
     console.error('[Categories GET Error]', err);

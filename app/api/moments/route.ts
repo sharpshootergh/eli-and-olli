@@ -1,23 +1,25 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { MOCK_MOMENTS } from '@/lib/mockData';
 import type { MomentMedia } from '@/lib/types';
 
 export async function GET() {
   try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from('moments_photos')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('moments_photos')
+        .select('*')
+        .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      const items = data.map((row) => ({
-        ...row,
-        media_type: row.media_type || 'image',
-        thumbnail_url: row.thumbnail_url ?? null,
-      }));
-      return NextResponse.json({ success: true, moments: items });
+      if (!error && data) {
+        const items = data.map((row) => ({
+          ...row,
+          media_type: row.media_type || 'image',
+          thumbnail_url: row.thumbnail_url ?? null,
+        }));
+        return NextResponse.json({ success: true, moments: items });
+      }
     }
   } catch (err) {
     console.error('[Moments GET Error]', err);
