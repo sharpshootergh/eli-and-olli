@@ -78,22 +78,14 @@ function LoginForm() {
     const validPasscodes = [
       'seguamour2026',
       'seguamour',
-      '2026',
-      'elishaatosagoe@gmail.com',
-      'elisha',
-      'olivia',
       (process.env.NEXT_PUBLIC_ADMIN_PASSCODE || '').toLowerCase(),
     ].filter(Boolean);
 
     if (validPasscodes.includes(input.toLowerCase())) {
       grantAdminAccess(siteConfig.primaryAdminEmail);
     } else {
-      setLocalError('Invalid passcode. Use "seguamour2026" or click Direct Access below.');
+      setLocalError('Invalid passcode. Please enter the official admin passcode.');
     }
-  };
-
-  const handleDirectAccess = () => {
-    grantAdminAccess(siteConfig.primaryAdminEmail);
   };
 
   const handleGoogleLogin = async () => {
@@ -112,7 +104,7 @@ function LoginForm() {
       setLocalError(
         err instanceof Error
           ? err.message
-          : 'Google OAuth not configured yet. Please use Passcode or Direct Access below.'
+          : 'Google OAuth error. Please use Admin Passcode above.'
       );
       setLoading(false);
     }
@@ -157,8 +149,9 @@ function LoginForm() {
                 type="password"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter passcode (e.g. seguamour2026)"
+                placeholder="Enter passcode"
                 className="w-full px-4 py-3 bg-white border border-wedding-brown text-sm text-wedding-ink focus:outline-none focus:border-wedding-blue pr-10"
+                required
               />
               <KeyRound className="w-4 h-4 text-wedding-muted absolute right-3 top-3.5" />
             </div>
@@ -178,19 +171,9 @@ function LoginForm() {
             <div className="w-full border-t border-wedding-brown" />
           </div>
           <span className="relative bg-wedding-white px-3 text-[11px] uppercase tracking-wider text-wedding-muted">
-            Or quick access
+            Or sign in with SSO
           </span>
         </div>
-
-        {/* 1-Click Direct Access */}
-        <button
-          type="button"
-          onClick={handleDirectAccess}
-          className="w-full py-3.5 px-6 bg-wedding-gold hover:bg-wedding-gold/90 text-wedding-ink font-semibold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm border border-wedding-brown/30"
-        >
-          <Sparkles className="w-4 h-4 text-wedding-ink" />
-          Enter Admin Portal (1-Click)
-        </button>
 
         {/* Google OAuth Alternative */}
         <button
@@ -201,10 +184,6 @@ function LoginForm() {
         >
           {loading ? 'Redirecting…' : 'Sign in with Google OAuth'}
         </button>
-
-        <div className="pt-2 text-center text-[11px] text-wedding-muted">
-          Passcode: <code className="bg-wedding-brown/30 px-1.5 py-0.5 rounded text-wedding-ink">seguamour2026</code>
-        </div>
       </div>
     </div>
   );
