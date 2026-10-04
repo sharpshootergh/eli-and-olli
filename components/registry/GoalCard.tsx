@@ -1,5 +1,6 @@
- 'use client';
+'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { Goal } from '@/lib/types';
 import { Users, Gift } from 'lucide-react';
@@ -14,6 +15,7 @@ interface GoalCardProps {
 
 export default function GoalCard({ goal, contributorCount, onContribute }: GoalCardProps) {
   const { t } = useLanguage();
+  const [imgError, setImgError] = useState(false);
   const isCapped = goal.type === 'capped';
   const target = goal.target_amount || 0;
   const raised = goal.amount_raised || 0;
@@ -24,13 +26,14 @@ export default function GoalCard({ goal, contributorCount, onContribute }: GoalC
     <div className="bg-wedding-white border border-wedding-brown overflow-hidden flex flex-col justify-between group">
       <div>
         <div className="relative w-full h-52 bg-wedding-brown/40 overflow-hidden">
-          {goal.image_url ? (
+          {goal.image_url && !imgError ? (
             <Image
               src={goal.image_url}
               alt={goal.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 768px) 100vw, 33vw"
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-wedding-blue">

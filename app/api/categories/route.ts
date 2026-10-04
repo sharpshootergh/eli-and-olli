@@ -3,6 +3,11 @@ import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { MOCK_CATEGORIES } from '@/lib/mockData';
 import type { Category } from '@/lib/types';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(id?: string | null): boolean {
+  return Boolean(id && UUID_REGEX.test(id));
+}
+
 export async function GET() {
   try {
     if (isSupabaseConfigured()) {
@@ -31,7 +36,7 @@ export async function POST(request: Request) {
 
     const sanitizeCategory = (c: Partial<Category>) => {
       const { id, name, sort_order } = c;
-      const validId = id && !id.startsWith('cat-') ? id : undefined;
+      const validId = isUuid(id) ? id : undefined;
       return {
         ...(validId ? { id: validId } : {}),
         name: name || 'Category',
@@ -73,7 +78,7 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    if (!id.startsWith('cat-')) {
+    if (isUuid(id)) {
       const { error } = await supabase.from('categories').delete().eq('id', id);
       if (error) {
         console.error('[Categories DELETE error]', error);

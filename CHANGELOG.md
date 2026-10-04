@@ -2,6 +2,18 @@
 
 All notable changes to the Eli & Olivia Wedding Website project are documented in this file.
 
+## [1.4.0] - 2026-10-04
+
+### Fixed
+- **Registry Goal Duplication on Edit**:
+  - Identified root cause in `app/api/goals/route.ts`: legacy mock string checks (`id.startsWith('goal-')`) stripped IDs during goal edits, causing Supabase Postgres to treat updates as new inserts and generate duplicate goal rows.
+  - Replaced prefix checks with strict UUID validation (`isUuid(id)`).
+  - Updated all mock categories, goals, and moments in `lib/mockData.ts` to use valid UUID strings.
+  - Updated `app/admin/goals/page.tsx` to generate client-side UUIDs (`crypto.randomUUID()`) for new goals and preserve existing goal IDs during edits, ensuring clean in-place updates.
+- **Broken Goal Images & Remote Hosts**:
+  - Updated `next.config.ts` `remotePatterns` with wildcard domain rules (`hostname: '**'`) for `http` and `https` protocols, allowing arbitrary external web image URLs to optimize and render without Next.js domain block errors.
+  - Added `onError` fallback handling in `components/registry/GoalCard.tsx` and `app/admin/goals/page.tsx` to display clean placeholders if an external image URL fails to load.
+
 ## [1.3.0] - 2026-10-04
 
 ### Fixed

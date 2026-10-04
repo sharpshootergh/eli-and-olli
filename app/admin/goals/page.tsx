@@ -110,9 +110,11 @@ export default function AdminGoalsPage() {
 
     const parsedTarget = type === 'capped' ? parseFloat(targetAmount) || 0 : null;
 
+    const goalId = editingGoal ? editingGoal.id : crypto.randomUUID();
+
     const goalRecord: Goal = {
-      id: editingGoal ? editingGoal.id : `goal-${Date.now()}`,
-      category_id: categoryId || 'cat-1',
+      id: goalId,
+      category_id: categoryId || categories[0]?.id || '11111111-1111-4111-a111-111111111101',
       title: title.trim(),
       description: description.trim() || null,
       image_url: imageUrl.trim() || null,
@@ -132,11 +134,15 @@ export default function AdminGoalsPage() {
 
     // 2. Persist to API route & DB
     try {
-      await fetch('/api/goals', {
+      const res = await fetch('/api/goals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goal: goalRecord }),
       });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.goals) && data.goals.length > 0) {
+        setGoals(data.goals);
+      }
     } catch {
       // Handled via local state
     }
@@ -149,7 +155,11 @@ export default function AdminGoalsPage() {
     setGoals(goals.filter((g) => g.id !== id));
 
     try {
-      await fetch(`/api/goals?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/goals?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.goals)) {
+        setGoals(data.goals);
+      }
     } catch {
       // Handled locally
     }
@@ -194,7 +204,14 @@ export default function AdminGoalsPage() {
                 {goal.image_url && (
                   <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-gray-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={goal.image_url} alt={goal.title} className="w-full h-full object-cover" />
+                    <img
+                      src={goal.image_url}
+                      alt={goal.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
                   </div>
                 )}
 
