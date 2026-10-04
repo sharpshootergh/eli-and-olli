@@ -1,11 +1,31 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { sendRsvpConfirmationEmail } from '@/lib/email';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import type { Attendance, Rsvp } from '@/lib/types';
 
 const VALID: Attendance[] = ['traditional', 'white', 'both', 'none'];
 
-export async function GET() {
+// Sliding window in-memory rate limiter for RSVP POST (5 submissions per 60s per IP)
+const rsvpRateLimitMap = new Map<string, number[]>();
+
+function isRateLimited(ip: string, maxRequests = 5, windowMs = 60000): boolean {
+  const now = Date.now();
+  const timestamps = (rsvpRateLimitMap.get(ip) || []).filter((t) => now - t < windowMs);
+  if (timestamps.length >= maxRequests) {
+    return true;
+  }
+  timestamps.push(now);
+  rsvpRateLimitMap.set(ip, timestamps);
+  return false;
+}
+
+export async function GET(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   const dbConnected = isSupabaseConfigured();
   let rsvps: Rsvp[] = [];
 
@@ -36,6 +56,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown-ip';
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json(
+        { error: 'Too many RSVP requests. Please wait a moment before trying again.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const guest_name = String(body.guest_name || '').trim();
     const guest_email = String(body.guest_email || '').trim().toLowerCase();
@@ -116,6 +144,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

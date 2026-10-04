@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import fs from 'fs';
 import path from 'path';
 
@@ -15,6 +16,11 @@ function saveFileLocally(buffer: Buffer, filename: string): string {
 }
 
 export async function POST(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;

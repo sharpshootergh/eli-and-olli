@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import { siteConfig, type WeddingEvent } from '@/lib/site-config';
 
 interface DbEventRow {
@@ -78,6 +79,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { events } = body;

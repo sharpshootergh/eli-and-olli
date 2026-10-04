@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import type { SiteMedia } from '@/lib/types';
 
 export const DEFAULT_SITE_MEDIA: SiteMedia[] = [
@@ -208,6 +209,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { item, items } = body;
@@ -250,6 +256,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -260,9 +271,7 @@ export async function DELETE(request: Request) {
 
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient();
-      if (UUID_REGEX.test(id)) {
-        await supabase.from('site_media').delete().eq('id', id);
-      }
+      await supabase.from('site_media').delete().eq('id', id);
 
       const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
       return NextResponse.json({ success: true, items: data || [] });

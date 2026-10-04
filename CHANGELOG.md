@@ -2,6 +2,23 @@
 
 All notable changes to the Eli & Olivia Wedding Website project are documented in this file.
 
+## [1.5.0] - 2026-10-04
+
+### Security & Hardening (Full Audit)
+- **API Endpoint Authentication (`lib/admin-guard.ts`)**:
+  - Implemented `checkIsAdminRequest()` server-side auth guard.
+  - Enforced admin authentication on all mutating endpoints (`POST`, `DELETE` on `/api/events`, `/api/goals`, `/api/categories`, `/api/moments`, `/api/content`, `/api/upload`).
+  - Protected guest RSVP reading (`GET /api/rsvp`), RSVP deletion (`DELETE /api/rsvp`), and contributions ledger (`/api/admin/contributions`) behind admin authentication.
+- **Diagnostic Endpoint Protection**:
+  - Restricted `/api/test-email` and `/api/test-supabase` to authenticated admins only.
+  - Obscured secret environment key outputs to prevent information disclosure.
+- **Timing-Safe Webhook Verification (`/api/webhooks/paystack`)**:
+  - Replaced standard string comparison with `crypto.timingSafeEqual` for Paystack HMAC SHA518 webhook signature verification.
+- **RSVP Rate Limiting**:
+  - Added a sliding window in-memory rate limiter to `POST /api/rsvp` (5 submissions / 60s per IP) to prevent spam/abuse.
+- **HTTP Security Headers**:
+  - Configured `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, and `Strict-Transport-Security` in `next.config.ts`.
+
 ## [1.4.0] - 2026-10-04
 
 ### Fixed

@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import { MOCK_CONTRIBUTIONS } from '@/lib/mockData';
 import type { Contribution } from '@/lib/types';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     if (isSupabaseConfigured()) {
       const supabase = createAdminClient();

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import { MOCK_GOALS } from '@/lib/mockData';
 import type { Goal } from '@/lib/types';
 
@@ -24,6 +25,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { goal, goals } = body;
@@ -72,6 +78,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

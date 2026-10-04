@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { checkIsAdminRequest } from '@/lib/admin-guard';
 import { MOCK_MOMENTS } from '@/lib/mockData';
 import type { MomentMedia } from '@/lib/types';
 
@@ -29,6 +30,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { moment, moments } = body;
@@ -36,7 +42,7 @@ export async function POST(request: Request) {
 
     const sanitizeMoment = (m: Partial<MomentMedia>) => {
       const { id, image_url, media_type, thumbnail_url, caption, sort_order } = m;
-      const validId = id && !id.startsWith('moment-') ? id : undefined;
+      const validId = id && id.trim().length > 0 ? id.trim() : undefined;
       return {
         ...(validId ? { id: validId } : {}),
         image_url,
@@ -72,6 +78,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const isAdmin = await checkIsAdminRequest(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -81,11 +92,9 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    if (!id.startsWith('moment-')) {
-      const { error } = await supabase.from('moments_photos').delete().eq('id', id);
-      if (error) {
-        console.error('[Moments DELETE error]', error);
-      }
+    const { error } = await supabase.from('moments_photos').delete().eq('id', id);
+    if (error) {
+      console.error('[Moments DELETE error]', error);
     }
 
     const { data } = await supabase.from('moments_photos').select('*').order('sort_order', { ascending: true });
