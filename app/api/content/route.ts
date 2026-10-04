@@ -211,32 +211,38 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { item, items } = body;
-    const supabase = createAdminClient();
 
-    if (item) {
-      const itemToUpsert = { ...item, id: sanitizeUUID(item.id) };
-      const { error } = await supabase.from('site_media').upsert(itemToUpsert);
-      if (error) {
-        console.error('[Supabase content upsert error]', error);
-        if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-          const { mobile_media_url, mobile_object_position, ...dbItem } = itemToUpsert;
-          await supabase.from('site_media').upsert(dbItem);
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+
+      if (item) {
+        const itemToUpsert = { ...item, id: sanitizeUUID(item.id) };
+        const { error } = await supabase.from('site_media').upsert(itemToUpsert);
+        if (error) {
+          console.error('[Supabase content upsert error]', error);
+          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+            const { mobile_media_url, mobile_object_position, ...dbItem } = itemToUpsert;
+            await supabase.from('site_media').upsert(dbItem);
+          }
+        }
+      } else if (Array.isArray(items)) {
+        const itemsToUpsert = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
+        const { error } = await supabase.from('site_media').upsert(itemsToUpsert);
+        if (error) {
+          console.error('[Supabase content upsert items error]', error);
+          if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
+            const dbItems = itemsToUpsert.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
+            await supabase.from('site_media').upsert(dbItems);
+          }
         }
       }
-    } else if (Array.isArray(items)) {
-      const itemsToUpsert = items.map((i) => ({ ...i, id: sanitizeUUID(i.id) }));
-      const { error } = await supabase.from('site_media').upsert(itemsToUpsert);
-      if (error) {
-        console.error('[Supabase content upsert items error]', error);
-        if (error.message?.includes('mobile_media_url') || error.message?.includes('column')) {
-          const dbItems = itemsToUpsert.map(({ mobile_media_url, mobile_object_position, ...rest }) => rest);
-          await supabase.from('site_media').upsert(dbItems);
-        }
-      }
+
+      const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+      return NextResponse.json({ success: true, items: data || [] });
     }
 
-    const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
-    return NextResponse.json({ success: true, items: data || [] });
+    const fallbackItems = Array.isArray(items) ? items : item ? [item] : DEFAULT_SITE_MEDIA;
+    return NextResponse.json({ success: true, items: fallbackItems });
   } catch (err) {
     console.error('[Content API Error]', err);
     return NextResponse.json({ error: 'Failed to save site media to Supabase' }, { status: 500 });
@@ -252,13 +258,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
-    if (UUID_REGEX.test(id)) {
-      await supabase.from('site_media').delete().eq('id', id);
+    if (isSupabaseConfigured()) {
+      const supabase = createAdminClient();
+      if (UUID_REGEX.test(id)) {
+        await supabase.from('site_media').delete().eq('id', id);
+      }
+
+      const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
+      return NextResponse.json({ success: true, items: data || [] });
     }
 
-    const { data } = await supabase.from('site_media').select('*').order('sort_order', { ascending: true });
-    return NextResponse.json({ success: true, items: data || [] });
+    const fallbackItems = DEFAULT_SITE_MEDIA.filter((item) => item.id !== id);
+    return NextResponse.json({ success: true, items: fallbackItems });
   } catch (err) {
     console.error('[Content Delete Error]', err);
     return NextResponse.json({ error: 'Failed to delete media from Supabase' }, { status: 500 });

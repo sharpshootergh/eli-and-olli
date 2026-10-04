@@ -10,9 +10,10 @@ All notable changes to the Eli & Olivia Wedding Website project are documented i
 ### Changed
 - **Admin Panel Data Persistence**:
   - Updated `/api/goals` to sanitize mock IDs (`goal-*`) preventing Postgres UUID syntax errors on upsert and delete operations.
-  - Updated `/api/goals`, `/api/categories`, and `/api/moments` GET handlers to respect empty database queries when Supabase is configured instead of force-reverting to mock data.
+  - Updated `/api/goals`, `/api/categories`, `/api/moments`, and `/api/content` handlers to safely wrap Supabase operations in `isSupabaseConfigured()`, ensuring state persistence when database credentials are standard and safe fallbacks when unconfigured.
   - Updated `AdminContributionsPage` (`/admin/contributions`) to fetch live ledger data via `/api/admin/contributions` and `/api/goals`.
-- **Live Web App Integration**:
+- **Live Web App Integration & Content Management**:
+  - Verified Content Management (`/admin/content` & `/api/content`): full support for home hero slideshow photos, story photos, custom MP4/YouTube videos, desktop/mobile focal positioning (`object_position`), mobile image overrides, sorting, and image uploads.
   - Updated `InvitationContent` (`/invitation` page) to fetch live event updates from `/api/events`, ensuring venue edits, dates, times, and GPS links persist and display on the digital invitation.
   - Updated default story section image positioning in `DEFAULT_SITE_MEDIA` for clean framing across mobile and desktop displays.
 
