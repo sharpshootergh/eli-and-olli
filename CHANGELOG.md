@@ -2,6 +2,17 @@
 
 All notable changes to the Eli & Olivia Wedding Website project are documented in this file.
 
+## [1.3.0] - 2026-10-04
+
+### Fixed
+- **HAR Network Dump Inspection (`seguamour.com.har`)**:
+  - Analyzed browser network trace (`seguamour.com.har`) containing 68 requests.
+  - Identified 500 Internal Server Error on `POST /api/events` (`Could not find the 'attendanceKey' column of 'site_events' in the schema cache`).
+  - Fixed `app/api/events/route.ts` by adding bidirectional column mappers (`dbRowToWeddingEvent` and `weddingEventToDbRow`) to convert camelCase frontend fields (`eventDate`, `eventTime`, `venueName`, `gpsUrl`, `sortOrder`, `attendanceKey`) to Postgres snake_case table columns (`event_date`, `event_time`, `venue_name`, `gps_url`, `sort_order`, `attendance_key`).
+
+### Changed
+- **Google SSO Hardening**: Added explicit pre-flight environment checks in `app/admin/login/page.tsx` to alert admins if Supabase URL credentials are not set before initiating Google OAuth flow.
+
 ## [1.2.0] - 2026-10-04
 
 ### Added

@@ -91,12 +91,21 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setLocalError('');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url || url.includes('placeholder')) {
+      setLocalError(
+        'Google SSO requires valid Supabase credentials (NEXT_PUBLIC_SUPABASE_URL). Please configure Google OAuth in your Supabase dashboard, or log in using the Admin Passcode.'
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/admin`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/admin`,
         },
       });
       if (oauthError) throw oauthError;
