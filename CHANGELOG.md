@@ -6,9 +6,9 @@ All notable changes to the Eli & Olivia Wedding Website project are documented i
 
 ### Fixed
 - **HAR Network Dump Inspection (`seguamour.com.har`)**:
-  - Analyzed browser network trace (`seguamour.com.har`) containing 68 requests.
-  - Identified 500 Internal Server Error on `POST /api/events` (`Could not find the 'attendanceKey' column of 'site_events' in the schema cache`).
-  - Fixed `app/api/events/route.ts` by adding bidirectional column mappers (`dbRowToWeddingEvent` and `weddingEventToDbRow`) to convert camelCase frontend fields (`eventDate`, `eventTime`, `venueName`, `gpsUrl`, `sortOrder`, `attendanceKey`) to Postgres snake_case table columns (`event_date`, `event_time`, `venue_name`, `gps_url`, `sort_order`, `attendance_key`).
+  - Analyzed complete browser network trace (`seguamour.com.har`) containing 144 requests.
+  - **Issue 1 (`POST /api/events` - Status 500)**: Resolved schema error (`Could not find the 'attendanceKey' column of 'site_events' in the schema cache`) by implementing bidirectional column mappers (`dbRowToWeddingEvent` and `weddingEventToDbRow`) in `app/api/events/route.ts` to convert camelCase frontend properties to Postgres snake_case columns.
+  - **Issue 2 (`POST /api/upload` - Status 500 & 400)**: Resolved Supabase Storage error (`Bucket not found`) in `app/api/upload/route.ts` by adding automatic public bucket creation (`createBucket(bucket, { public: true })`) with retry logic, as well as a local disk fallback (`.data/uploads/` -> `/api/uploads/[filename]`) to ensure uploads succeed under all environment conditions.
 
 ### Changed
 - **Google SSO Hardening**: Added explicit pre-flight environment checks in `app/admin/login/page.tsx` to alert admins if Supabase URL credentials are not set before initiating Google OAuth flow.
