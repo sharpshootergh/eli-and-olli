@@ -13,6 +13,9 @@ All notable changes to the Eli & Olivia Wedding Website project are documented i
 - **Broken Goal Images & Remote Hosts**:
   - Updated `next.config.ts` `remotePatterns` with wildcard domain rules (`hostname: '**'`) for `http` and `https` protocols, allowing arbitrary external web image URLs to optimize and render without Next.js domain block errors.
   - Added `onError` fallback handling in `components/registry/GoalCard.tsx` and `app/admin/goals/page.tsx` to display clean placeholders if an external image URL fails to load.
+- **Goal Deletion Persistence**:
+  - Removed strict pattern enforcement on `DELETE /api/goals` and `DELETE /api/categories`.
+  - Admin deletion requests now execute `supabase.from('goals').delete().eq('id', id)` unconditionally for any ID string (including legacy string IDs like `"goal-1788809645793"` / `"Our Hme"`), ensuring deleted items are permanently removed from the Supabase database.
 
 ## [1.3.0] - 2026-10-04
 

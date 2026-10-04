@@ -3,11 +3,6 @@ import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { MOCK_GOALS } from '@/lib/mockData';
 import type { Goal } from '@/lib/types';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isUuid(id?: string | null): boolean {
-  return Boolean(id && UUID_REGEX.test(id));
-}
-
 export async function GET() {
   try {
     if (isSupabaseConfigured()) {
@@ -36,8 +31,8 @@ export async function POST(request: Request) {
 
     const sanitizeGoal = (g: Partial<Goal>) => {
       const { id, category_id, title, description, image_url, type, target_amount, amount_raised, contributor_count, sort_order } = g;
-      const validId = isUuid(id) ? id : undefined;
-      const validCatId = isUuid(category_id) ? category_id : '11111111-1111-4111-a111-111111111101';
+      const validId = id && id.trim().length > 0 ? id.trim() : undefined;
+      const validCatId = category_id && category_id.trim().length > 0 ? category_id.trim() : '11111111-1111-4111-a111-111111111101';
       return {
         ...(validId ? { id: validId } : {}),
         category_id: validCatId,
@@ -86,11 +81,9 @@ export async function DELETE(request: Request) {
     }
 
     const supabase = createAdminClient();
-    if (isUuid(id)) {
-      const { error } = await supabase.from('goals').delete().eq('id', id);
-      if (error) {
-        console.error('[Goals DELETE error]', error);
-      }
+    const { error } = await supabase.from('goals').delete().eq('id', id);
+    if (error) {
+      console.error('[Goals DELETE error]', error);
     }
 
     const { data } = await supabase.from('goals').select('*').order('sort_order', { ascending: true });
