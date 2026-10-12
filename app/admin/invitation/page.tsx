@@ -8,8 +8,16 @@ export default function AdminInvitationPage() {
   const [language, setLanguage] = useState<'en' | 'fr'>('en');
 
   const printInvitation = () => {
-    previewRef.current?.contentWindow?.focus();
-    previewRef.current?.contentWindow?.print();
+    try {
+      if (previewRef.current?.contentWindow) {
+        previewRef.current.contentWindow.focus();
+        previewRef.current.contentWindow.print();
+        return;
+      }
+    } catch {
+      // Fallback to opening in new window if iframe print is blocked
+    }
+    window.open(`/invitation?lang=${language}`, '_blank')?.focus();
   };
 
   return (
