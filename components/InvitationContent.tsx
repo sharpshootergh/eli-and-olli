@@ -39,7 +39,7 @@ function eventLabel(eventId: string, language: 'en' | 'fr', fallback: string) {
     return language === 'fr' ? 'Mariage traditionnel' : 'Traditional Wedding';
   }
   if (eventId === 'event-white') {
-    return language === 'fr' ? 'Mariage blanc' : 'White Wedding';
+    return language === 'fr' ? 'Mariage religieux' : 'White Wedding';
   }
   return fallback;
 }
