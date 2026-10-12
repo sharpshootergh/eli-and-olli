@@ -232,28 +232,65 @@
   }
 
   html,
+  body {
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html,
   body,
   .invite-page,
   .invite-card,
   .invite-inner,
   .invite-pattern,
   .invite-side-motif,
-  .invite-side-motif i {
+  .invite-side-motif i,
+  .invite-rsvp {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
   .invite-page {
     background: #e9dfcd !important;
+    min-height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .invite-card {
     border-color: #142a50 !important;
     box-shadow: none !important;
-    break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
   }
 
-  .invite-pattern { height: 36px; }
+  .invite-pattern {
+    height: 32px !important;
+  }
+
+  .invite-fade {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .invite-rsvp {
+    background-color: #142a50 !important;
+    color: #fffdf7 !important;
+    border-color: #142a50 !important;
+    display: inline-flex !important;
+    text-decoration: none !important;
+  }
+
+  .invite-side-motif {
+    top: 60px !important;
+    bottom: 60px !important;
+  }
 
   .invite-side-motif i {
     animation: none !important;
