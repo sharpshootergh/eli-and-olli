@@ -11,7 +11,45 @@ import {
   eventCountdownIso,
   type WeddingEvent,
 } from '@/lib/site-config';
-import { MapPin } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
+
+function getGoogleCalendarUrl(event: WeddingEvent, coupleNames: string): string {
+  const title = encodeURIComponent(`${event.name} — ${coupleNames}`);
+  const details = encodeURIComponent(`Wedding celebration for ${coupleNames}. For details, visit https://seguamour.com`);
+  const location = encodeURIComponent(`${event.venueName ? `${event.venueName}, ` : ''}${event.location}`);
+  const dateStr = event.eventDate.replace(/-/g, '');
+  const timeStr = event.eventTime ? event.eventTime.replace(':', '') + '00' : '120000';
+  const start = `${dateStr}T${timeStr}`;
+  const endHour = String(Math.min(23, Number(event.eventTime ? event.eventTime.slice(0, 2) : '12') + 6)).padStart(2, '0');
+  const end = `${dateStr}T${endHour}0000`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
+}
+
+function downloadIcs(event: WeddingEvent, coupleNames: string) {
+  const dateStr = event.eventDate.replace(/-/g, '');
+  const timeStr = event.eventTime ? event.eventTime.replace(':', '') + '00' : '120000';
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SeguAmour//Wedding//EN',
+    'BEGIN:VEVENT',
+    `SUMMARY:${event.name} — ${coupleNames}`,
+    `DESCRIPTION:Wedding celebration for ${coupleNames}. Visit https://seguamour.com`,
+    `LOCATION:${event.venueName ? `${event.venueName}, ` : ''}${event.location}`,
+    `DTSTART:${dateStr}T${timeStr}`,
+    `DTEND:${dateStr}T200000`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${event.id}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface WelcomeSectionProps {
   events?: WeddingEvent[];
@@ -99,19 +137,37 @@ export default function WelcomeSection({ events: initialEvents = siteConfig.even
                   {event.venueName ? `${event.venueName}, ` : ''}{event.location}
                 </p>
 
-                {event.gpsUrl && (
-                  <div className="pt-1">
+                <div className="pt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+                  {event.gpsUrl && (
                     <a
                       href={event.gpsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-wedding-blue hover:underline font-semibold"
+                      className="inline-flex items-center gap-1.5 text-wedding-blue hover:underline font-semibold py-1"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>View Location on Google Maps</span>
+                      <span>Google Maps</span>
                     </a>
-                  </div>
-                )}
+                  )}
+                  <span className="text-wedding-brown" aria-hidden>·</span>
+                  <a
+                    href={getGoogleCalendarUrl(event, siteConfig.shortNames)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-wedding-gold hover:underline font-semibold py-1"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Add to Calendar</span>
+                  </a>
+                  <span className="text-wedding-brown" aria-hidden>·</span>
+                  <button
+                    type="button"
+                    onClick={() => downloadIcs(event, siteConfig.shortNames)}
+                    className="inline-flex items-center gap-1 text-wedding-muted hover:text-wedding-ink hover:underline cursor-pointer py-1"
+                  >
+                    <span>.ICS (Apple)</span>
+                  </button>
+                </div>
               </div>
 
               <CountdownTimer targetDate={eventCountdownIso(event)} variant="dark" />

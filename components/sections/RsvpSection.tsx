@@ -125,7 +125,7 @@ export default function RsvpSection() {
           )}
         </div>
         ) : (
-          <form onSubmit={onSubmit} className="bg-wedding-white border border-wedding-brown p-6 sm:p-8 space-y-5">
+          <form onSubmit={onSubmit} className="bg-wedding-white border border-wedding-brown p-5 sm:p-8 space-y-5">
             <div className="space-y-1.5">
               <label htmlFor="rsvp-name" className="text-xs tracking-wide uppercase text-wedding-muted">
                 {t('fullName')}
@@ -135,7 +135,7 @@ export default function RsvpSection() {
                 required
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue"
+                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue"
               />
             </div>
 
@@ -149,7 +149,7 @@ export default function RsvpSection() {
                 required
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue"
+                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue"
               />
             </div>
 
@@ -160,7 +160,7 @@ export default function RsvpSection() {
               {options.map((opt) => (
                 <label
                   key={opt.value}
-                  className={`flex items-center gap-3 px-4 py-3 border cursor-pointer transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3.5 min-h-[48px] border cursor-pointer transition-colors active:scale-[0.99] ${
                     attendance === opt.value
                       ? 'border-wedding-blue bg-wedding-blue/5'
                       : 'border-wedding-brown hover:border-wedding-blue/40'
@@ -172,9 +172,9 @@ export default function RsvpSection() {
                     value={opt.value}
                     checked={attendance === opt.value}
                     onChange={() => setAttendance(opt.value)}
-                    className="accent-wedding-blue"
+                    className="accent-wedding-blue w-4 h-4"
                   />
-                  <span className="text-sm text-wedding-ink">{opt.label}</span>
+                  <span className="text-sm sm:text-sm text-wedding-ink font-medium leading-snug">{opt.label}</span>
                 </label>
               ))}
             </fieldset>
@@ -183,15 +183,29 @@ export default function RsvpSection() {
               <label htmlFor="rsvp-count" className="text-xs tracking-wide uppercase text-wedding-muted">
                 {t('guestCount')}
               </label>
-              <input
-                id="rsvp-count"
-                type="number"
-                min={1}
-                max={20}
-                value={guestCount}
-                onChange={(e) => setGuestCount(Number(e.target.value) || 1)}
-                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue"
-              />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGuestCount((c) => Math.max(1, c - 1))}
+                  disabled={guestCount <= 1}
+                  className="w-12 h-12 flex items-center justify-center border border-wedding-brown bg-wedding-white hover:bg-wedding-brown/20 active:bg-wedding-brown/40 disabled:opacity-40 text-xl font-serif text-wedding-ink transition-colors cursor-pointer"
+                  aria-label="Decrease guest count"
+                >
+                  -
+                </button>
+                <div className="flex-1 text-center font-serif text-2xl text-wedding-ink py-2 border border-wedding-brown bg-wedding-white tabular-nums select-none">
+                  {guestCount}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGuestCount((c) => Math.min(20, c + 1))}
+                  disabled={guestCount >= 20}
+                  className="w-12 h-12 flex items-center justify-center border border-wedding-brown bg-wedding-white hover:bg-wedding-brown/20 active:bg-wedding-brown/40 disabled:opacity-40 text-xl font-serif text-wedding-ink transition-colors cursor-pointer"
+                  aria-label="Increase guest count"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -203,7 +217,7 @@ export default function RsvpSection() {
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue resize-none"
+                className="w-full px-4 py-3 border border-wedding-brown bg-wedding-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-wedding-blue resize-none"
               />
             </div>
 
@@ -214,7 +228,7 @@ export default function RsvpSection() {
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="btn-primary w-full disabled:opacity-60"
+              className="btn-primary w-full py-3.5 text-sm sm:text-base disabled:opacity-60 cursor-pointer shadow-xs active:scale-[0.99] transition-transform"
             >
               {status === 'loading' ? t('sending') : t('sendRsvp')}
             </button>

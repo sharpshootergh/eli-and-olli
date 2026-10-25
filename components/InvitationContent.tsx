@@ -238,9 +238,9 @@ export default function InvitationContent({ printLanguage }: { printLanguage?: '
                 {text.rsvpNow}
               </a>
 
-              {/* QR Code section (scannable when printed, clickable in PDF) */}
+              {/* QR Code section (scannable when printed, clickable on desktop/PDF) */}
               {qrSvg && (
-                <div className="flex flex-col items-center pt-1 print:pt-0.5">
+                <div className="hidden sm:flex print:flex flex-col items-center pt-1 print:pt-0.5">
                   <a
                     href={rsvpUrl}
                     target="_blank"
