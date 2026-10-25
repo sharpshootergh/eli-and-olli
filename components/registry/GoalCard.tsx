@@ -25,14 +25,14 @@ export default function GoalCard({ goal, contributorCount, onContribute }: GoalC
   return (
     <div className="bg-wedding-white border border-wedding-brown overflow-hidden flex flex-col justify-between group">
       <div>
-        <div className="relative w-full h-52 bg-wedding-brown/40 overflow-hidden">
+        <div className="relative w-full h-44 sm:h-52 bg-wedding-brown/40 overflow-hidden">
           {goal.image_url && !imgError ? (
             <Image
               src={goal.image_url}
               alt={goal.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, 33vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onError={() => setImgError(true)}
             />
           ) : (

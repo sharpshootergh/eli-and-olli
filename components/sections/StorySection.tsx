@@ -51,6 +51,27 @@ export default function StorySection() {
   const isYoutube = storyVideo ? storyVideo.video_provider === 'youtube' : story.videoType === 'youtube';
   const videoUrl = storyVideo?.media_url ?? (isYoutube ? story.youtubeUrl : story.mp4Url);
 
+  const [activeStoryIdx, setActiveStoryIdx] = useState(0);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [endX, setEndX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setEndX(null);
+    setStartX(e.targetTouches[0].clientX);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setEndX(e.targetTouches[0].clientX);
+  };
+  const handleTouchEnd = () => {
+    if (startX === null || endX === null || images.length <= 1) return;
+    const distance = startX - endX;
+    if (distance > 40) {
+      setActiveStoryIdx((prev) => (prev + 1) % images.length);
+    } else if (distance < -40) {
+      setActiveStoryIdx((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
   return (
     <section id="story" className="section-pad scroll-mt-20 max-w-5xl mx-auto">
       <div className="text-center space-y-3 mb-12 md:mb-16">
@@ -60,37 +81,77 @@ export default function StorySection() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-        <div className="space-y-6">
-          {(() => {
-            const hasMobileOverride0 = Boolean(
-              (images[0].mobileSrc && images[0].mobileSrc !== images[0].src) ||
-              (images[0].mobilePosition && images[0].mobilePosition !== images[0].position)
-            );
-            return (
-              <div className="relative aspect-[4/5] w-full overflow-hidden border border-wedding-brown">
-                <Image
-                  src={images[0].src}
-                  alt={`${shortNames} — a quiet moment`}
-                  fill
-                  className={`object-cover ${hasMobileOverride0 ? 'hidden sm:block' : ''}`}
-                  style={{ objectPosition: images[0].position }}
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-                {hasMobileOverride0 && (
+        {/* Mobile View: Swipeable Touch Photo Frame */}
+        <div className="block sm:hidden space-y-2.5">
+          <div
+            className="relative aspect-[4/5] w-full overflow-hidden border border-wedding-brown touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {images.map((img, idx) => {
+              const isCurrent = idx === activeStoryIdx;
+              return (
+                <div
+                  key={img.src + idx}
+                  className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
+                    isCurrent ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                  }`}
+                >
                   <Image
-                    src={images[0].mobileSrc || images[0].src}
-                    alt={`${shortNames} — a quiet moment`}
+                    src={img.mobileSrc || img.src}
+                    alt={`${shortNames} story photo ${idx + 1}`}
                     fill
-                    className="object-cover block sm:hidden"
-                    style={{ objectPosition: images[0].mobilePosition || images[0].position }}
+                    className="object-cover"
+                    style={{ objectPosition: img.mobilePosition || 'center 20%' }}
                     sizes="100vw"
+                    priority={idx === 0}
                   />
-                )}
+                </div>
+              );
+            })}
+
+            {/* Mobile Swipe Pagination Dots */}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center items-center gap-2 pointer-events-auto">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveStoryIdx(idx)}
+                    aria-label={`Go to story photo ${idx + 1}`}
+                    className={`transition-all rounded-full ${
+                      idx === activeStoryIdx
+                        ? 'w-6 h-2 bg-wedding-blue shadow-xs'
+                        : 'w-2 h-2 bg-white/70 hover:bg-white'
+                    }`}
+                  />
+                ))}
               </div>
-            );
-          })()}
+            )}
+          </div>
+
+          {images.length > 1 && (
+            <p className="text-center text-[11px] text-wedding-muted tracking-wider uppercase">
+              Swipe to view more photos ({activeStoryIdx + 1}/{images.length})
+            </p>
+          )}
+        </div>
+
+        {/* Desktop View: Stacked Photos */}
+        <div className="hidden sm:block space-y-6">
+          <div className="relative aspect-[4/5] w-full overflow-hidden border border-wedding-brown">
+            <Image
+              src={images[0].src}
+              alt={`${shortNames} — a quiet moment`}
+              fill
+              className="object-cover"
+              style={{ objectPosition: images[0].position }}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+          </div>
           {images[1] && (
-            <div className="relative aspect-[16/10] w-full overflow-hidden border border-wedding-brown hidden sm:block">
+            <div className="relative aspect-[16/10] w-full overflow-hidden border border-wedding-brown">
               <Image
                 src={images[1].src}
                 alt={`${shortNames} celebrating`}

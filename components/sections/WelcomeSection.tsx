@@ -39,30 +39,30 @@ export default function WelcomeSection({ events: initialEvents = siteConfig.even
 
   return (
     <section id="welcome" className="scroll-mt-20">
-      <div className="relative min-h-[70vh] w-full overflow-hidden">
+      <div className="relative min-h-[78svh] sm:min-h-[70vh] w-full overflow-hidden">
         <HeroSlideshow />
-        <div className="absolute inset-0 bg-gradient-to-t from-wedding-ink/55 via-wedding-ink/20 to-wedding-ink/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-wedding-ink/75 via-wedding-ink/25 to-transparent sm:from-wedding-ink/55 sm:via-wedding-ink/20 sm:to-wedding-ink/10 pointer-events-none" />
 
-        <div className="absolute inset-0 flex flex-col justify-end px-6 pb-14 md:pb-20">
-          <div className="max-w-4xl mx-auto w-full text-center text-white space-y-4 rounded-sm bg-wedding-ink/10 px-5 py-7 sm:px-8 sm:py-9">
-            <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl tracking-tight drop-shadow-lg">
+        <div className="absolute inset-0 flex flex-col justify-end px-4 sm:px-6 pb-10 sm:pb-14 md:pb-20 pointer-events-none">
+          <div className="max-w-4xl mx-auto w-full text-center text-white space-y-3 sm:space-y-4 rounded-sm bg-wedding-ink/15 backdrop-blur-[2px] sm:backdrop-blur-none px-4 py-5 sm:px-8 sm:py-9 pointer-events-auto">
+            <h1 className="font-serif text-4xl sm:text-7xl md:text-8xl tracking-tight drop-shadow-lg">
               {couple.partnerOne.firstName}{' '}
               <span className="font-light text-wedding-gold">&</span>{' '}
               {couple.partnerTwo.firstName}
             </h1>
-            <p className="text-sm sm:text-base tracking-[0.2em] uppercase text-white/95 max-w-lg mx-auto drop-shadow-md">
+            <p className="text-xs sm:text-base tracking-[0.2em] uppercase text-white/95 max-w-lg mx-auto drop-shadow-md">
               {t('heroKicker')}
             </p>
-            <p className="max-w-md mx-auto text-base text-white/95 font-light leading-relaxed pt-1 drop-shadow-md">
+            <p className="max-w-md mx-auto text-sm sm:text-base text-white/95 font-light leading-relaxed pt-0.5 sm:pt-1 drop-shadow-md">
               {t('heroText')}
             </p>
-            <div className="flex flex-wrap justify-center gap-3 pt-3">
-              <a href="#rsvp" className="btn-primary bg-wedding-blue">
+            <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3 pt-2 sm:pt-3">
+              <a href="#rsvp" className="btn-primary bg-wedding-blue text-xs sm:text-sm px-5 sm:px-6 py-2.5 sm:py-3">
                 RSVP
               </a>
               <a
                 href="#story"
-                className="inline-flex items-center justify-center px-6 py-3 border border-white/70 text-white text-sm tracking-wide hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 border border-white/70 text-white text-xs sm:text-sm tracking-wide hover:bg-white/10 transition-colors"
               >
                 {t('story')}
               </a>
