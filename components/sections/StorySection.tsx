@@ -49,13 +49,13 @@ export default function StorySection() {
           src: '/hero/TBC288-8c168739-6060-41c1-b5e3-93b0581aa660.webp',
           mobileSrc: '/hero/mobile/TBC288.webp',
           position: 'left',
-          mobilePosition: 'center 20%',
+          mobilePosition: 'center 15%',
         },
         {
-          src: '/hero/TBC140-9c898793-a28e-41bb-a3b2-c0f640100ae9.webp',
-          mobileSrc: '/hero/mobile/TBC140.webp',
-          position: 'left',
-          mobilePosition: 'center 20%',
+          src: '/hero/TBC171-5be6d6b0-ceb7-45c3-a0ba-d7bb1c37a0d0.webp',
+          mobileSrc: '/hero/mobile/TBC171.webp',
+          position: 'center',
+          mobilePosition: 'center 15%',
         },
       ];
   const isYoutube = storyVideo ? storyVideo.video_provider === 'youtube' : story.videoType === 'youtube';

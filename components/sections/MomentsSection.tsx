@@ -220,14 +220,26 @@ export default function MomentsSection() {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <Image
-                  src={selected.image_url}
-                  alt={selected.caption || 'Moment'}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 1200px"
-                  priority
-                />
+                <>
+                  <Image
+                    src={selected.image_url}
+                    alt={selected.caption || 'Moment'}
+                    fill
+                    className={`object-contain ${selected.thumbnail_url ? 'hidden sm:block' : ''}`}
+                    sizes="(max-width: 768px) 100vw, 1200px"
+                    priority
+                  />
+                  {selected.thumbnail_url && (
+                    <Image
+                      src={selected.thumbnail_url}
+                      alt={selected.caption || 'Moment'}
+                      fill
+                      className="object-contain block sm:hidden"
+                      sizes="100vw"
+                      priority
+                    />
+                  )}
+                </>
               )}
             </div>
 
