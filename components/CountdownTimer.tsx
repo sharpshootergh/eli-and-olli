@@ -31,19 +31,37 @@ function getTimeLeft(targetDate: string, currentTime: number): TimeLeft {
   };
 }
 
+let cachedCurrentTime = typeof window !== 'undefined' ? Date.now() : 0;
+const timeListeners = new Set<() => void>();
+
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    cachedCurrentTime = Date.now();
+    timeListeners.forEach((listener) => listener());
+  }, 1000);
+}
+
+function subscribeTime(listener: () => void) {
+  timeListeners.add(listener);
+  return () => {
+    timeListeners.delete(listener);
+  };
+}
+
+function getTimeSnapshot() {
+  return cachedCurrentTime;
+}
+
+function getServerSnapshot() {
+  return 0;
+}
+
 export default function CountdownTimer({
   targetDate,
   variant = 'dark',
 }: CountdownTimerProps) {
   const { t } = useLanguage();
-  const currentTime = useSyncExternalStore(
-    (onStoreChange) => {
-      const id = setInterval(onStoreChange, 1000);
-      return () => clearInterval(id);
-    },
-    () => Date.now(),
-    () => 0
-  );
+  const currentTime = useSyncExternalStore(subscribeTime, getTimeSnapshot, getServerSnapshot);
   const timeLeft = getTimeLeft(targetDate, currentTime);
 
   const light = variant === 'light';

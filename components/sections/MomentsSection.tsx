@@ -10,8 +10,8 @@ import { useLanguage } from '@/components/LanguageProvider';
 
 export default function MomentsSection() {
   const { t } = useLanguage();
-  const [items, setItems] = useState<MomentMedia[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<MomentMedia[]>(MOCK_MOMENTS);
+  const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Touch gesture support for mobile lightbox swiping

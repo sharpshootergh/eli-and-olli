@@ -186,7 +186,7 @@ export default function StorySection() {
           <div className="space-y-3">
             <p className="text-[11px] tracking-[0.2em] uppercase text-wedding-gold">{t('watchFilm')}</p>
             <div className="relative w-full aspect-video overflow-hidden border border-wedding-brown bg-wedding-ink/5">
-              {isYoutube ? (
+              {isYoutube && videoUrl ? (
                 <iframe
                   src={videoUrl}
                   title={`${shortNames} story video`}

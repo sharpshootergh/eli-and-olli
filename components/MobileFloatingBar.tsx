@@ -6,15 +6,10 @@ import { useLanguage } from '@/components/LanguageProvider';
 
 export default function MobileFloatingBar() {
   const { language, setLanguage, t } = useLanguage();
-  const [visible, setVisible] = useState(false);
   const [inRsvp, setInRsvp] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      // Show floating bar after scrolling past 350px
-      setVisible(scrollY > 350);
-
       // Check if user is currently viewing the RSVP section
       const rsvpEl = document.getElementById('rsvp');
       if (rsvpEl) {
@@ -29,7 +24,7 @@ export default function MobileFloatingBar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (!visible || inRsvp) return null;
+  if (inRsvp) return null;
 
   return (
     <div className="fixed bottom-4 inset-x-3 sm:inset-x-4 z-40 md:hidden flex items-center justify-between bg-wedding-white/95 backdrop-blur-md border border-wedding-brown shadow-xl px-3 sm:px-4 py-2 rounded-full transition-all duration-300">
